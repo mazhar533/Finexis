@@ -13,6 +13,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.mazhar.finexis.ui.screens.LoginScreen
 import com.mazhar.finexis.ui.screens.SignupScreen
+import com.mazhar.finexis.ui.screens.MainContainerScreen
 import com.mazhar.finexis.ui.theme.FinexisBg
 import com.mazhar.finexis.ui.theme.FinexisTextPrimary
 import com.mazhar.finexis.viewmodel.AuthViewModel
@@ -66,19 +67,13 @@ fun FinexisNavGraph(
         }
         
         composable(Screen.Main.route) {
-            // Temporary main content screen, to be replaced by the bottom nav container later
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(FinexisBg),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "Welcome to Finexis Main Screen!",
-                    color = FinexisTextPrimary,
-                    fontSize = 20.sp
-                )
-            }
+            MainContainerScreen(
+                onLogoutSuccess = {
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(Screen.Main.route) { inclusive = true }
+                    }
+                }
+            )
         }
     }
 }

@@ -62,17 +62,39 @@ fun LoginScreen(
     modifier: Modifier = Modifier,
     viewModel: AuthViewModel = viewModel()
 ) {
+    val isLoading by viewModel.isLoading.collectAsState()
+    val errorMessage by viewModel.errorMessage.collectAsState()
+
+    LoginScreenContent(
+        isLoading = isLoading,
+        errorMessage = errorMessage,
+        onLoginClick = { email, password ->
+            viewModel.login(email, password, onLoginSuccess)
+        },
+        onNavigateToSignup = onNavigateToSignup,
+        clearError = { viewModel.clearError() },
+        modifier = modifier
+    )
+}
+
+@Composable
+fun LoginScreenContent(
+    isLoading: Boolean,
+    errorMessage: String?,
+    onLoginClick: (String, String) -> Unit,
+    onNavigateToSignup: () -> Unit,
+    clearError: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
-    val isLoading by viewModel.isLoading.collectAsState()
-    val errorMessage by viewModel.errorMessage.collectAsState()
     val context = LocalContext.current
 
     LaunchedEffect(errorMessage) {
         errorMessage?.let {
             Toast.makeText(context, it, Toast.LENGTH_LONG).show()
-            viewModel.clearError()
+            clearError()
         }
     }
 
@@ -159,7 +181,7 @@ fun LoginScreen(
                 text = "Sign In",
                 showArrow = true,
                 onClick = {
-                    viewModel.login(email, password, onLoginSuccess)
+                    onLoginClick(email, password)
                 }
             )
         }
@@ -202,8 +224,7 @@ fun LoginScreen(
                     .border(1.dp, FinexisBorder, CircleShape)
                     .clickable {
                         Toast.makeText(context, "Biometric login simulated", Toast.LENGTH_SHORT).show()
-                        // Mock login via biometric
-                        viewModel.login("biometric@finexis.com", "biometric_pass", onLoginSuccess)
+                        onLoginClick("biometric@finexis.com", "biometric_pass")
                     },
                 contentAlignment = Alignment.Center
             ) {
@@ -251,9 +272,12 @@ fun LoginScreen(
 @Composable
 fun LoginScreenPreview() {
     FinexisTheme {
-        LoginScreen(
-            onLoginSuccess = {},
-            onNavigateToSignup = {}
+        LoginScreenContent(
+            isLoading = false,
+            errorMessage = null,
+            onLoginClick = { _, _ -> },
+            onNavigateToSignup = {},
+            clearError = {}
         )
     }
 }
