@@ -23,6 +23,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mazhar.finexis.ui.theme.*
 import com.mazhar.finexis.viewmodel.ExpenseViewModel
+import com.mazhar.finexis.viewmodel.BudgetViewModel
+import com.mazhar.finexis.ui.components.BudgetDialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.runtime.collectAsState
 
@@ -36,29 +38,50 @@ data class CategoryBudget(
 @Composable
 fun BudgetScreen(
     modifier: Modifier = Modifier,
-    viewModel: ExpenseViewModel = viewModel()
+    viewModel: ExpenseViewModel = viewModel(),
+    budgetViewModel: BudgetViewModel = viewModel()
 ) {
     val expenses by viewModel.expenses.collectAsState()
+    val budgetState by budgetViewModel.budget.collectAsState()
 
     val budgetSpent = expenses.filter { !it.isIncome }.sumOf { it.amount }
-    val budgetTotal = 27800.0
+    val budgetTotal = budgetState.monthlyLimit
 
-    val categoryBudgets = remember(expenses) {
+    val categoryBudgets = remember(expenses, budgetState) {
         listOf(
-            CategoryBudget("Food", expenses.filter { !it.isIncome && it.category.lowercase() == "food" }.sumOf { it.amount }, 6950.0, Color(0xFFF59E0B)),
-            CategoryBudget("Transport", expenses.filter { !it.isIncome && it.category.lowercase() == "transport" }.sumOf { it.amount }, 6950.0, Color(0xFF3B82F6)),
-            CategoryBudget("Shopping", expenses.filter { !it.isIncome && it.category.lowercase() == "shopping" }.sumOf { it.amount }, 6950.0, Color(0xFFEC4899)),
-            CategoryBudget("Other", expenses.filter { !it.isIncome && it.category.lowercase() == "other" }.sumOf { it.amount }, 6950.0, Color(0xFF8B5CF6))
+            CategoryBudget("Food", expenses.filter { !it.isIncome && it.category.lowercase() == "food" }.sumOf { it.amount }, budgetState.foodLimit, Color(0xFFF59E0B)),
+            CategoryBudget("Transport", expenses.filter { !it.isIncome && it.category.lowercase() == "transport" }.sumOf { it.amount }, budgetState.transportLimit, Color(0xFF3B82F6)),
+            CategoryBudget("Shopping", expenses.filter { !it.isIncome && it.category.lowercase() == "shopping" }.sumOf { it.amount }, budgetState.shoppingLimit, Color(0xFFEC4899)),
+            CategoryBudget("Other", expenses.filter { !it.isIncome && it.category.lowercase() == "other" }.sumOf { it.amount }, budgetState.otherLimit, Color(0xFF8B5CF6))
         )
     }
+
+    var showEditDialog by remember { mutableStateOf(false) }
 
     BudgetScreenContent(
         budgetSpent = budgetSpent,
         budgetTotal = budgetTotal,
         categories = categoryBudgets,
         modifier = modifier,
-        onEditBudget = {}
+        onEditBudget = { showEditDialog = true }
     )
+
+    if (showEditDialog) {
+        BudgetDialog(
+            currentBudget = budgetState,
+            onDismiss = { showEditDialog = false },
+            onConfirm = { monthlyLimit, foodLimit, transportLimit, shoppingLimit, otherLimit ->
+                budgetViewModel.saveBudget(
+                    monthlyLimit = monthlyLimit,
+                    foodLimit = foodLimit,
+                    transportLimit = transportLimit,
+                    shoppingLimit = shoppingLimit,
+                    otherLimit = otherLimit
+                )
+                showEditDialog = false
+            }
+        )
+    }
 }
 
 @Composable

@@ -27,6 +27,7 @@ import com.mazhar.finexis.ui.theme.*
 
 import com.mazhar.finexis.model.Expense
 import com.mazhar.finexis.viewmodel.ExpenseViewModel
+import com.mazhar.finexis.viewmodel.BudgetViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import java.text.SimpleDateFormat
 import java.util.*
@@ -35,9 +36,11 @@ import java.util.*
 fun HomeScreen(
     modifier: Modifier = Modifier,
     viewModel: ExpenseViewModel = viewModel(),
+    budgetViewModel: BudgetViewModel = viewModel(),
     onNavigateToSettings: () -> Unit = {}
 ) {
     val expenses by viewModel.expenses.collectAsState()
+    val budgetState by budgetViewModel.budget.collectAsState()
 
     val userName = "Mazharalihaider4"
     val incomeAmount = expenses.filter { it.isIncome }.sumOf { it.amount }
@@ -45,7 +48,7 @@ fun HomeScreen(
     val totalBalance = incomeAmount - expenseAmount
 
     val budgetSpent = expenses.filter { !it.isIncome }.sumOf { it.amount }
-    val budgetTotal = 27800.0
+    val budgetTotal = budgetState.monthlyLimit
 
     HomeScreenContent(
         userName = userName,

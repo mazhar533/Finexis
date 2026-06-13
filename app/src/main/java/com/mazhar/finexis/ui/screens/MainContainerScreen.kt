@@ -24,6 +24,7 @@ import com.mazhar.finexis.ui.theme.FinexisPrimary
 import com.mazhar.finexis.ui.theme.FinexisTheme
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mazhar.finexis.viewmodel.ExpenseViewModel
+import com.mazhar.finexis.viewmodel.BudgetViewModel
 import com.mazhar.finexis.ui.components.ExpenseDialog
 
 data class NavigationItem(
@@ -35,7 +36,8 @@ data class NavigationItem(
 fun MainContainerScreen(
     onLogoutSuccess: () -> Unit,
     modifier: Modifier = Modifier,
-    expenseViewModel: ExpenseViewModel = viewModel()
+    expenseViewModel: ExpenseViewModel = viewModel(),
+    budgetViewModel: BudgetViewModel = viewModel()
 ) {
     var currentTab by rememberSaveable { mutableIntStateOf(0) }
     var showExpenseDialog by remember { mutableStateOf(false) }
@@ -70,10 +72,10 @@ fun MainContainerScreen(
                 .padding(innerPadding)
         ) {
             when (currentTab) {
-                0 -> HomeScreen(viewModel = expenseViewModel)
+                0 -> HomeScreen(viewModel = expenseViewModel, budgetViewModel = budgetViewModel)
                 1 -> HistoryScreen(viewModel = expenseViewModel)
                 2 -> AnalyticsScreen()
-                3 -> BudgetScreen()
+                3 -> BudgetScreen(viewModel = expenseViewModel, budgetViewModel = budgetViewModel)
                 4 -> ProfileScreen(onLogoutSuccess = onLogoutSuccess)
             }
         }
