@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "478907807839",
+    "project_id": "finexis-1830e",
+    "storage_bucket": "finexis-1830e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:478907807839:android:92b9cf794b945ea10e43ea",
+        "android_client_info": {
+          "package_name": "com.mazhar.finexis"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBZ3uOL4VnPXqvaAM8X_YijTGYwLwxj-kg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
