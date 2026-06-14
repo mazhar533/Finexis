@@ -1,6 +1,6 @@
 package com.mazhar.finexis.ui.screens
 
-import androidx.compose.foundation.Image
+import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -29,6 +29,8 @@ import com.mazhar.finexis.model.Expense
 import com.mazhar.finexis.viewmodel.ExpenseViewModel
 import com.mazhar.finexis.viewmodel.BudgetViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.mazhar.finexis.ui.components.FadeInSlideUp
+import com.mazhar.finexis.ui.components.StaggeredItem
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -63,6 +65,7 @@ fun HomeScreen(
     )
 }
 
+@SuppressLint("DefaultLocale")
 @Composable
 fun HomeScreenContent(
     userName: String,
@@ -80,166 +83,164 @@ fun HomeScreenContent(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp, vertical = 24.dp)
+            .padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 24.dp)
     ) {
-        Spacer(modifier = Modifier.height(16.dp))
 
         // Header Section
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 24.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                // Circular profile image placeholder with avatar-like appearance
-                Box(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = userName.take(1).uppercase(),
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontSize = 20.sp
-                    )
-                }
-                Spacer(modifier = Modifier.width(12.dp))
-                Column {
-                    Text(
-                        text = "Good morning,",
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.secondary
-                    )
-                    Text(
-                        text = userName,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                }
-            }
-
-            // Circular Settings/Icon Button
-            Box(
+        FadeInSlideUp(delayMillis = 0) {
+            Row(
                 modifier = Modifier
-                    .size(44.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surface)
-                    .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
-                    .clickable { onSettingsClick() },
-                contentAlignment = Alignment.Center
+                    .fillMaxWidth()
+                    .padding(bottom = 24.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.icon_setting),
-                    contentDescription = "Settings",
-                    tint = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-        }
-
-        // Total Balance Gradient Card
-        val cardGradient = Brush.verticalGradient(
-            colors = listOf(Color(0xFF006B44), Color(0xFF004D30))
-        )
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 24.dp),
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.Transparent)
-        ) {
-            Column(
-                modifier = Modifier
-                    .background(cardGradient)
-                    .padding(24.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Total Balance",
-                        color = Color.White.copy(alpha = 0.7f),
-                        fontSize = 14.sp
-                    )
-
-                    // Currency Pill
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    // Circular profile image placeholder with avatar-like appearance
                     Box(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(Color.White.copy(alpha = 0.15f))
-                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                            .size(48.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = "PKR",
-                                color = Color.White,
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Icon(
-                                painter = painterResource(id = R.drawable.icon_download),
-                                contentDescription = "Currency Select",
-                                tint = Color.White,
-                                modifier = Modifier
-                                    .size(10.dp)
-                                    .rotate(180f) // arrow pointing up/down indicator rotation
-                            )
-                        }
+                        Text(
+                            text = userName.take(1).uppercase(),
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontSize = 20.sp
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Text(
+                            text = "Good morning,",
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.secondary
+                        )
+                        Text(
+                            text = userName,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = "Rs ${String.format("%.2f", totalBalance)}",
-                    color = Color.White,
-                    fontSize = 32.sp,
-                    fontWeight = FontWeight.Bold
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
-                HorizontalDivider(color = Color.White.copy(alpha = 0.15f))
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                //Settings Button
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.surface)
+                        .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
+                        .clickable { onSettingsClick() },
+                    contentAlignment = Alignment.Center
                 ) {
-                    // Income Area
+                    Icon(
+                        painter = painterResource(id = R.drawable.icon_setting),
+                        contentDescription = "Settings",
+                        tint = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+        }
+
+        // Total Balance Card
+        FadeInSlideUp(delayMillis = 100) {
+            val cardGradient = Brush.verticalGradient(
+                colors = listOf(Color(0xFF006B44), Color(0xFF004D30))
+            )
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 24.dp),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.Transparent)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .background(cardGradient)
+                        .padding(24.dp)
+                ) {
                     Row(
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        Text(
+                            text = "Total Balance",
+                            color = Color.White.copy(alpha = 0.7f),
+                            fontSize = 14.sp
+                        )
+
+                        // Currency Pill
                         Box(
                             modifier = Modifier
-                                .size(32.dp)
-                                .clip(CircleShape)
-                                .background(Color.White.copy(alpha = 0.1f)),
-                            contentAlignment = Alignment.Center
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color.White.copy(alpha = 0.15f))
+                                .padding(horizontal = 12.dp, vertical = 6.dp)
                         ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.icon_download),
-                                contentDescription = "Income Icon",
-                                tint = FinexisIncome,
-                                modifier = Modifier.size(14.dp)
-                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = "PKR",
+                                    color = Color.White,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold
+                               )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Icon(
+                                    painter = painterResource(id = R.drawable.icon_arrow_down),
+                                    contentDescription = "Currency Select",
+                                    tint = Color.White,
+                                    modifier = Modifier
+                                        .size(10.dp)
+                                )
+                            }
                         }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Column {
-                            Text(
-                                text = "Income",
-                                color = Color.White.copy(alpha = 0.7f),
-                                fontSize = 12.sp
-                            )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = "Rs ${String.format("%.2f", totalBalance)}",
+                        color = Color.White,
+                        fontSize = 32.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Spacer(modifier = Modifier.height(24.dp))
+                    HorizontalDivider(color = Color.White.copy(alpha = 0.15f))
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        // Income Area
+                        Column(
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.icon_arrow),
+                                    contentDescription = "Income Icon",
+                                    tint = FinexisIncome,
+                                    modifier = Modifier
+                                        .size(12.dp)
+                                        .rotate(0f) // Down-right default
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "Income",
+                                    color = Color.White.copy(alpha = 0.7f),
+                                    fontSize = 12.sp
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = "Rs ${String.format("%.2f", incomeAmount)}",
                                 color = Color.White,
@@ -247,47 +248,41 @@ fun HomeScreenContent(
                                 fontWeight = FontWeight.Bold
                             )
                         }
-                    }
 
-                    // Vertical Separator
-                    Box(
-                        modifier = Modifier
-                            .height(40.dp)
-                            .width(1.dp)
-                            .background(Color.White.copy(alpha = 0.15f))
-                            .align(Alignment.CenterVertically)
-                    )
-
-                    // Expenses Area
-                    Row(
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(start = 16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                        // Vertical Separator
                         Box(
                             modifier = Modifier
-                                .size(32.dp)
-                                .clip(CircleShape)
-                                .background(Color.White.copy(alpha = 0.1f)),
-                            contentAlignment = Alignment.Center
+                                .height(40.dp)
+                                .width(1.dp)
+                                .background(Color.White.copy(alpha = 0.15f))
+                                .align(Alignment.CenterVertically)
+                        )
+
+                        // Expenses Area
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(start = 16.dp)
                         ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.icon_download),
-                                contentDescription = "Expenses Icon",
-                                tint = FinexisExpense,
-                                modifier = Modifier
-                                    .size(14.dp)
-                                    .rotate(180f) // Pointing up for expense
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Column {
-                            Text(
-                                text = "Expenses",
-                                color = Color.White.copy(alpha = 0.7f),
-                                fontSize = 12.sp
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.icon_arrow),
+                                    contentDescription = "Expenses Icon",
+                                    tint = FinexisExpense,
+                                    modifier = Modifier
+                                        .size(12.dp)
+                                        .rotate(270f) // Top-right
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "Expenses",
+                                    color = Color.White.copy(alpha = 0.7f),
+                                    fontSize = 12.sp
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
                             Text(
                                 text = "Rs ${String.format("%.2f", expenseAmount)}",
                                 color = Color.White,
@@ -301,96 +296,103 @@ fun HomeScreenContent(
         }
 
         // Monthly Budget Card
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 28.dp),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-        ) {
-            Row(
+        FadeInSlideUp(delayMillis = 200) {
+            Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                    .padding(bottom = 28.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(48.dp)
-                            .clip(CircleShape)
-                            .background(Color(0xFFE3F2FD)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.icon_puggy),
-                            contentDescription = "Budget Icon",
-                            tint = Color(0xFF1976D2),
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Column {
-                        Text(
-                            text = "Monthly Budget",
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            fontSize = 16.sp
-                        )
-                        Text(
-                            text = "Rs ${String.format("%.2f", budgetSpent)} / Rs ${String.format("%.2f", budgetTotal)}",
-                            color = MaterialTheme.colorScheme.secondary,
-                            fontSize = 13.sp
-                        )
-                    }
-                }
-
-                // Progress Indicator
-                val percentUsed = if (budgetTotal > 0) (budgetSpent / budgetTotal) else 0.0
-                val percentInt = (percentUsed * 100).toInt()
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier.size(44.dp)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    CircularProgressIndicator(
-                        progress = { percentUsed.toFloat() },
-                        modifier = Modifier.fillMaxSize(),
-                        color = Color(0xFF1E88E5),
-                        strokeWidth = 4.dp,
-                        trackColor = Color(0xFFE3F2FD)
-                    )
-                    Text(
-                        text = "$percentInt%",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFFE3F2FD)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.icon_puggy),
+                                contentDescription = "Budget Icon",
+                                tint = Color(0xFF1976D2),
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column {
+                            Text(
+                                text = "Monthly Budget",
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                fontSize = 16.sp
+                            )
+                            Text(
+                                text = "Rs ${String.format("%.2f", budgetSpent)} / Rs ${String.format("%.2f", budgetTotal)}",
+                                color = MaterialTheme.colorScheme.secondary,
+                                fontSize = 13.sp
+                            )
+                        }
+                    }
+
+                    // Progress Indicator
+                    val percentUsed = if (budgetTotal > 0) (budgetSpent / budgetTotal) else 0.0
+                    val percentInt = (percentUsed * 100).toInt()
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier.size(44.dp)
+                    ) {
+                        CircularProgressIndicator(
+                            progress = { percentUsed.toFloat() },
+                            modifier = Modifier.fillMaxSize(),
+                            color = Color(0xFF1E88E5),
+                            strokeWidth = 4.dp,
+                            trackColor = Color(0xFFE3F2FD)
+                        )
+                        Text(
+                            text = "$percentInt%",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                 }
             }
         }
 
         // Recent Transactions Section Header
-        Text(
-            text = "Recent Transactions",
-            fontWeight = FontWeight.Bold,
-            fontSize = 18.sp,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
+        FadeInSlideUp(delayMillis = 300) {
+            Text(
+                text = "Recent Transactions",
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+        }
 
         // Transactions Column
         Column(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            expenses.forEach { expense ->
-                TransactionRow(expense = expense)
+            expenses.forEachIndexed { index, expense ->
+                StaggeredItem(index = index + 5) {
+                    TransactionRow(expense = expense)
+                }
             }
         }
     }
 }
 
+@SuppressLint("DefaultLocale")
 @Composable
 fun TransactionRow(expense: Expense) {
     val sdf = remember { SimpleDateFormat("MM/dd/yyyy", Locale.US) }
@@ -444,7 +446,7 @@ fun TransactionRow(expense: Expense) {
                 Spacer(modifier = Modifier.width(12.dp))
                 Column {
                     Text(
-                        text = if (expense.description.isNotEmpty()) expense.description else expense.category,
+                        text = expense.description.ifEmpty { expense.category },
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 15.sp

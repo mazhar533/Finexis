@@ -27,6 +27,8 @@ import com.mazhar.finexis.ui.theme.*
 import com.mazhar.finexis.model.Expense
 import com.mazhar.finexis.viewmodel.ExpenseViewModel
 import com.mazhar.finexis.ui.components.ExpenseDialog
+import com.mazhar.finexis.ui.components.FadeInSlideUp
+import com.mazhar.finexis.ui.components.StaggeredItem
 import androidx.lifecycle.viewmodel.compose.viewModel
 import java.text.SimpleDateFormat
 import java.util.*
@@ -89,65 +91,69 @@ fun HistoryScreenContent(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp, vertical = 24.dp)
+            .padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 24.dp)
     ) {
-        Spacer(modifier = Modifier.height(16.dp))
 
-        // Title
-        Text(
-            text = "History",
-            fontSize = 28.sp,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.padding(bottom = 20.dp)
-        )
+        // Title and Search Bar
+        FadeInSlideUp(delayMillis = 0) {
+            Column {
+                Text(
+                    text = "History",
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.padding(bottom = 20.dp)
+                )
 
-        // Search Bar
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = onSearchQueryChange,
-            placeholder = { Text("Search transactions...", color = MaterialTheme.colorScheme.secondary) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 20.dp),
-            shape = RoundedCornerShape(16.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = MaterialTheme.colorScheme.surface,
-                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                unfocusedBorderColor = MaterialTheme.colorScheme.outline
-            ),
-            singleLine = true
-        )
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = onSearchQueryChange,
+                    placeholder = { Text("Search transactions...", color = MaterialTheme.colorScheme.secondary) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 20.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                    ),
+                    singleLine = true
+                )
+            }
+        }
 
         // Filter Pills
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 20.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            val filters = listOf("All", "Expense", "Income")
-            filters.forEach { filter ->
-                val isActive = selectedFilter == filter
-                val bgColor = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface
-                val textColor = if (isActive) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
-                val borderColor = if (isActive) Color.Transparent else MaterialTheme.colorScheme.outline
+        FadeInSlideUp(delayMillis = 100) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 20.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                val filters = listOf("All", "Expense", "Income")
+                filters.forEach { filter ->
+                    val isActive = selectedFilter == filter
+                    val bgColor = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface
+                    val textColor = if (isActive) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+                    val borderColor = if (isActive) Color.Transparent else MaterialTheme.colorScheme.outline
 
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(bgColor)
-                        .border(1.dp, borderColor, RoundedCornerShape(14.dp))
-                        .clickable { onFilterSelect(filter) }
-                        .padding(horizontal = 20.dp, vertical = 10.dp)
-                ) {
-                    Text(
-                        text = filter,
-                        color = textColor,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 14.sp
-                    )
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(bgColor)
+                            .border(1.dp, borderColor, RoundedCornerShape(14.dp))
+                            .clickable { onFilterSelect(filter) }
+                            .padding(horizontal = 20.dp, vertical = 10.dp)
+                    ) {
+                        Text(
+                            text = filter,
+                            color = textColor,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 14.sp
+                        )
+                    }
                 }
             }
         }
@@ -166,12 +172,14 @@ fun HistoryScreenContent(
                 matchesSearch && matchesFilter
             }
 
-            filteredExpenses.forEach { expense ->
-                HistoryTransactionRow(
-                    expense = expense,
-                    onDelete = { onDeleteTransaction(expense.id) },
-                    onEdit = { onEditTransaction(expense) }
-                )
+            filteredExpenses.forEachIndexed { index, expense ->
+                StaggeredItem(index = index + 3) {
+                    HistoryTransactionRow(
+                        expense = expense,
+                        onDelete = { onDeleteTransaction(expense.id) },
+                        onEdit = { onEditTransaction(expense) }
+                    )
+                }
             }
         }
     }

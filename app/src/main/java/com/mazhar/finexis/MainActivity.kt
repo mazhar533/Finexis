@@ -31,20 +31,15 @@ class MainActivity : ComponentActivity() {
             FinexisTheme(darkTheme = isDarkMode) {
                 val navController = rememberNavController()
                 
-                // Persistent session check: if currentUser is not null, go directly to Main
-                val currentUserEmail = authViewModel.currentUser.value
-                val startDestination = if (currentUserEmail != null) {
-                    Screen.Main.route
-                } else {
-                    Screen.Login.route
-                }
+                val startDestination = Screen.Splash.route
 
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     FinexisNavGraph(
                         navController = navController,
                         authViewModel = authViewModel,
                         startDestination = startDestination,
-                        modifier = Modifier.padding(innerPadding)
+                        preferenceViewModel = preferenceViewModel,
+                        modifier = Modifier
                     )
                 }
             }

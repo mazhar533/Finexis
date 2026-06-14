@@ -163,9 +163,9 @@ fun ExpenseDialog(
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(if (!isIncome) MaterialTheme.colorScheme.background else Color.Transparent)
                         .shadow(if (!isIncome) 2.dp else 0.dp, RoundedCornerShape(12.dp))
+                        .background(if (!isIncome) MaterialTheme.colorScheme.background else Color.Transparent)
+                        .clip(RoundedCornerShape(12.dp))
                         .clickable { isIncome = false }
                         .padding(vertical = 10.dp),
                     contentAlignment = Alignment.Center
@@ -182,9 +182,9 @@ fun ExpenseDialog(
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(if (isIncome) MaterialTheme.colorScheme.background else Color.Transparent)
                         .shadow(if (isIncome) 2.dp else 0.dp, RoundedCornerShape(12.dp))
+                        .background(if (isIncome) MaterialTheme.colorScheme.background else Color.Transparent)
+                        .clip(RoundedCornerShape(12.dp))
                         .clickable { isIncome = true }
                         .padding(vertical = 10.dp),
                     contentAlignment = Alignment.Center
@@ -403,9 +403,9 @@ fun ExpenseDialog(
                             modifier = Modifier
                                 .weight(1f)
                                 .fillMaxHeight()
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(if (paymentMethod == "Card") MaterialTheme.colorScheme.background else Color.Transparent)
                                 .shadow(if (paymentMethod == "Card") 1.dp else 0.dp, RoundedCornerShape(10.dp))
+                                .background(if (paymentMethod == "Card") MaterialTheme.colorScheme.background else Color.Transparent)
+                                .clip(RoundedCornerShape(10.dp))
                                 .clickable { paymentMethod = "Card" },
                             contentAlignment = Alignment.Center
                         ) {
@@ -422,9 +422,9 @@ fun ExpenseDialog(
                             modifier = Modifier
                                 .weight(1f)
                                 .fillMaxHeight()
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(if (paymentMethod == "Cash") MaterialTheme.colorScheme.background else Color.Transparent)
                                 .shadow(if (paymentMethod == "Cash") 1.dp else 0.dp, RoundedCornerShape(10.dp))
+                                .background(if (paymentMethod == "Cash") MaterialTheme.colorScheme.background else Color.Transparent)
+                                .clip(RoundedCornerShape(10.dp))
                                 .clickable { paymentMethod = "Cash" },
                             contentAlignment = Alignment.Center
                         ) {

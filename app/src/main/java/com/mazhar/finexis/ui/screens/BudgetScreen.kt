@@ -25,6 +25,8 @@ import com.mazhar.finexis.ui.theme.*
 import com.mazhar.finexis.viewmodel.ExpenseViewModel
 import com.mazhar.finexis.viewmodel.BudgetViewModel
 import com.mazhar.finexis.ui.components.BudgetDialog
+import com.mazhar.finexis.ui.components.FadeInSlideUp
+import com.mazhar.finexis.ui.components.StaggeredItem
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.runtime.collectAsState
 
@@ -97,41 +99,42 @@ fun BudgetScreenContent(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp, vertical = 24.dp)
+            .padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 24.dp)
     ) {
-        Spacer(modifier = Modifier.height(16.dp))
 
         // Header Section
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 24.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Budgets",
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-
-            // Circular Edit Button
-            Box(
+        FadeInSlideUp(delayMillis = 0) {
+            Row(
                 modifier = Modifier
-                    .size(44.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surface)
-                    .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
-                    .clickable { onEditBudget() },
-                contentAlignment = Alignment.Center
+                    .fillMaxWidth()
+                    .padding(bottom = 24.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = Icons.Default.Edit,
-                    contentDescription = "Edit Budgets",
-                    tint = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier.size(20.dp)
+                Text(
+                    text = "Budgets",
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground
                 )
+
+                // Circular Edit Button
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.surface)
+                        .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
+                        .clickable { onEditBudget() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Edit Budgets",
+                        tint = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             }
         }
 
@@ -139,99 +142,105 @@ fun BudgetScreenContent(
         val cardGradient = Brush.verticalGradient(
             colors = listOf(Color(0xFF0F172A), Color(0xFF1E293B))
         )
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 28.dp),
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.Transparent)
-        ) {
-            Column(
+        FadeInSlideUp(delayMillis = 100) {
+            Card(
                 modifier = Modifier
-                    .background(cardGradient)
-                    .padding(24.dp)
+                    .fillMaxWidth()
+                    .padding(bottom = 28.dp),
+                shape = RoundedCornerShape(24.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.Transparent)
             ) {
-                Text(
-                    text = "Monthly Budget",
-                    color = Color.White.copy(alpha = 0.7f),
-                    fontSize = 14.sp
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Row(
-                    verticalAlignment = Alignment.Bottom
-                ) {
-                    Text(
-                        text = "Rs ${budgetSpent.toInt()}",
-                        color = Color.White,
-                        fontSize = 32.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = " / Rs ${budgetTotal.toInt()}",
-                        color = Color.White.copy(alpha = 0.5f),
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Medium,
-                        modifier = Modifier.padding(bottom = 4.dp, start = 4.dp)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                // Progress Bar
-                val percentUsed = if (budgetTotal > 0) (budgetSpent / budgetTotal) else 0.0
-                val percentInt = (percentUsed * 100).toInt()
-                val budgetLeft = (budgetTotal - budgetSpent).toInt()
-
-                LinearProgressIndicator(
-                    progress = { percentUsed.toFloat() },
+                Column(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(8.dp)
-                        .clip(RoundedCornerShape(4.dp)),
-                    color = FinexisPrimary,
-                    trackColor = Color.White.copy(alpha = 0.1f)
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                        .background(cardGradient)
+                        .padding(24.dp)
                 ) {
                     Text(
-                        text = "$percentInt% used",
+                        text = "Monthly Budget",
                         color = Color.White.copy(alpha = 0.7f),
-                        fontSize = 13.sp
+                        fontSize = 14.sp
                     )
 
-                    Text(
-                        text = "Rs $budgetLeft left",
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        verticalAlignment = Alignment.Bottom
+                    ) {
+                        Text(
+                            text = "Rs ${budgetSpent.toInt()}",
+                            color = Color.White,
+                            fontSize = 32.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = " / Rs ${budgetTotal.toInt()}",
+                            color = Color.White.copy(alpha = 0.5f),
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.padding(bottom = 4.dp, start = 4.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    // Progress Bar
+                    val percentUsed = if (budgetTotal > 0) (budgetSpent / budgetTotal) else 0.0
+                    val percentInt = (percentUsed * 100).toInt()
+                    val budgetLeft = (budgetTotal - budgetSpent).toInt()
+
+                    LinearProgressIndicator(
+                        progress = { percentUsed.toFloat() },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(8.dp)
+                            .clip(RoundedCornerShape(4.dp)),
                         color = FinexisPrimary,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold
+                        trackColor = Color.White.copy(alpha = 0.1f)
                     )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "$percentInt% used",
+                            color = Color.White.copy(alpha = 0.7f),
+                            fontSize = 13.sp
+                        )
+
+                        Text(
+                            text = "Rs $budgetLeft left",
+                            color = FinexisPrimary,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
         }
 
         // Category Tracking Section Header
-        Text(
-            text = "Category Tracking",
-            fontWeight = FontWeight.Bold,
-            fontSize = 18.sp,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
+        FadeInSlideUp(delayMillis = 180) {
+            Text(
+                text = "Category Tracking",
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+        }
 
         // Categories list
         Column(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            categories.forEach { category ->
-                CategoryBudgetRow(category = category)
+            categories.forEachIndexed { index, category ->
+                StaggeredItem(index = index + 3) {
+                    CategoryBudgetRow(category = category)
+                }
             }
         }
     }

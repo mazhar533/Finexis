@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -40,11 +41,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.mazhar.finexis.ui.theme.FinexisBorder
 import com.mazhar.finexis.ui.theme.FinexisPrimary
-import com.mazhar.finexis.ui.theme.FinexisSurface
-import com.mazhar.finexis.ui.theme.FinexisTextPrimary
-import com.mazhar.finexis.ui.theme.FinexisTextSecondary
 
 @Composable
 fun FinexisTextField(
@@ -62,7 +59,7 @@ fun FinexisTextField(
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
             text = label,
-            color = FinexisTextSecondary,
+            color = MaterialTheme.colorScheme.secondary,
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium,
             modifier = Modifier.padding(bottom = 8.dp)
@@ -71,7 +68,7 @@ fun FinexisTextField(
         val borderModifier = if (isFocused) {
             Modifier.border(1.dp, FinexisPrimary, RoundedCornerShape(16.dp))
         } else {
-            Modifier.border(1.dp, FinexisBorder, RoundedCornerShape(16.dp))
+            Modifier.border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(16.dp))
         }
 
         Box(
@@ -79,7 +76,7 @@ fun FinexisTextField(
                 .fillMaxWidth()
                 .height(56.dp)
                 .clip(RoundedCornerShape(16.dp))
-                .background(FinexisSurface)
+                .background(MaterialTheme.colorScheme.surface)
                 .then(borderModifier)
                 .onFocusChanged { isFocused = it.isFocused }
                 .padding(horizontal = 16.dp),
@@ -93,7 +90,7 @@ fun FinexisTextField(
                     if (value.isEmpty()) {
                         Text(
                             text = placeholder,
-                            color = FinexisTextSecondary.copy(alpha = 0.6f),
+                            color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.6f),
                             fontSize = 15.sp
                         )
                     }
@@ -102,7 +99,7 @@ fun FinexisTextField(
                         value = value,
                         onValueChange = onValueChange,
                         textStyle = TextStyle(
-                            color = FinexisTextPrimary,
+                            color = MaterialTheme.colorScheme.onBackground,
                             fontSize = 15.sp
                         ),
                         cursorBrush = SolidColor(FinexisPrimary),
@@ -128,7 +125,7 @@ fun FinexisTextField(
                         Icon(
                             imageVector = eyeIcon,
                             contentDescription = "Toggle Password Visibility",
-                            tint = FinexisTextSecondary,
+                            tint = MaterialTheme.colorScheme.secondary,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -136,7 +133,7 @@ fun FinexisTextField(
                     Icon(
                         imageVector = Icons.Default.Email,
                         contentDescription = "Email Icon",
-                        tint = FinexisTextSecondary,
+                        tint = MaterialTheme.colorScheme.secondary,
                         modifier = Modifier.size(20.dp)
                     )
                 }

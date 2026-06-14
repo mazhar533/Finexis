@@ -27,6 +27,7 @@ import com.mazhar.finexis.R
 import com.mazhar.finexis.ui.theme.*
 import com.mazhar.finexis.viewmodel.AuthViewModel
 import com.mazhar.finexis.viewmodel.PreferenceViewModel
+import com.mazhar.finexis.ui.components.FadeInSlideUp
 
 @Composable
 fun ProfileScreen(
@@ -77,221 +78,236 @@ fun ProfileScreenContent(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp, vertical = 24.dp)
+            .padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 24.dp)
     ) {
-        Spacer(modifier = Modifier.height(16.dp))
 
         // Title
-        Text(
-            text = "Profile",
-            fontSize = 28.sp,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground
-        )
-        Text(
-            text = "Manage your account and settings",
-            fontSize = 14.sp,
-            color = MaterialTheme.colorScheme.secondary,
-            modifier = Modifier.padding(top = 4.dp, bottom = 24.dp)
-        )
+        FadeInSlideUp(delayMillis = 0) {
+            Column {
+                Text(
+                    text = "Profile",
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                Text(
+                    text = "Manage your account and settings",
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.secondary,
+                    modifier = Modifier.padding(top = 4.dp, bottom = 24.dp)
+                )
+            }
+        }
 
         // User Info Card
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 24.dp),
-            shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-        ) {
-            Row(
+        FadeInSlideUp(delayMillis = 100) {
+            Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(20.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .padding(bottom = 24.dp),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
-                // User Avatar initials box
-                Box(
+                Row(
                     modifier = Modifier
-                        .size(64.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
-                    contentAlignment = Alignment.Center
+                        .fillMaxWidth()
+                        .padding(20.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = userName.take(1).uppercase(),
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontSize = 26.sp
-                    )
-                }
-                Spacer(modifier = Modifier.width(16.dp))
-                Column {
-                    Text(
-                        text = userName,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = "Personal Account",
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.secondary
-                    )
+                    // User Avatar initials box
+                    Box(
+                        modifier = Modifier
+                            .size(64.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = userName.take(1).uppercase(),
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontSize = 26.sp
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column {
+                        Text(
+                            text = userName,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "Personal Account",
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.secondary
+                        )
+                    }
                 }
             }
         }
 
         // Section: Preferences
-        Text(
-            text = "Preferences",
-            fontSize = 15.sp,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.padding(bottom = 12.dp, start = 4.dp)
-        )
+        FadeInSlideUp(delayMillis = 180) {
+            Text(
+                text = "Preferences",
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.padding(bottom = 12.dp, start = 4.dp)
+            )
+        }
 
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 24.dp),
-            shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-        ) {
-            Column {
-                // Default Currency Row
-                ProfileSettingRow(
-                    iconResId = R.drawable.icon_card,
-                    title = "Default Currency",
-                    subtitle = if (currency == "PKR") "Pakistani Rupee (PKR)" else "US Dollar (USD)",
-                    action = {
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(10.dp))
-                                .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
-                                .clickable { onCurrencyToggle() }
-                                .padding(horizontal = 12.dp, vertical = 6.dp)
-                        ) {
-                            Text(
-                                text = if (currency == "PKR") "Switch to USD" else "Switch to PKR",
-                                color = MaterialTheme.colorScheme.primary,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 12.sp
+        FadeInSlideUp(delayMillis = 240) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 24.dp),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Column {
+                    // Default Currency Row
+                    ProfileSettingRow(
+                        iconResId = R.drawable.icon_card,
+                        title = "Default Currency",
+                        subtitle = if (currency == "PKR") "Pakistani Rupee (PKR)" else "US Dollar (USD)",
+                        action = {
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
+                                    .clickable { onCurrencyToggle() }
+                                    .padding(horizontal = 12.dp, vertical = 6.dp)
+                            ) {
+                                Text(
+                                    text = if (currency == "PKR") "Switch to USD" else "Switch to PKR",
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 12.sp
+                                )
+                            }
+                        }
+                    )
+
+                    HorizontalDivider(
+                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+
+                    // App Theme Row
+                    ProfileSettingRow(
+                        iconResId = if (isDarkMode) R.drawable.icon_dark else R.drawable.icon_light,
+                        title = "App Theme",
+                        subtitle = if (isDarkMode) "Dark Mode" else "Light Mode",
+                        action = {
+                            Switch(
+                                checked = isDarkMode,
+                                onCheckedChange = { onThemeToggle() },
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = Color.White,
+                                    checkedTrackColor = MaterialTheme.colorScheme.primary
+                                )
                             )
                         }
-                    }
-                )
-
-                HorizontalDivider(
-                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                )
-
-                // App Theme Row
-                ProfileSettingRow(
-                    iconResId = if (isDarkMode) R.drawable.icon_dark else R.drawable.icon_light,
-                    title = "App Theme",
-                    subtitle = if (isDarkMode) "Dark Mode" else "Light Mode",
-                    action = {
-                        Switch(
-                            checked = isDarkMode,
-                            onCheckedChange = { onThemeToggle() },
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor = Color.White,
-                                checkedTrackColor = MaterialTheme.colorScheme.primary
-                            )
-                        )
-                    }
-                )
+                    )
+                }
             }
         }
 
         // Section: Security & Data
-        Text(
-            text = "Security & Data",
-            fontSize = 15.sp,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.padding(bottom = 12.dp, start = 4.dp)
-        )
+        FadeInSlideUp(delayMillis = 320) {
+            Text(
+                text = "Security & Data",
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.padding(bottom = 12.dp, start = 4.dp)
+            )
+        }
 
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 32.dp),
-            shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-        ) {
-            Column {
-                // Biometric Login Row
-                ProfileSettingRow(
-                    iconResId = R.drawable.icon_biomatric,
-                    title = "Biometric Login",
-                    subtitle = "Face ID / Touch ID",
-                    action = {
-                        Switch(
-                            checked = isBiometricEnabled,
-                            onCheckedChange = { onBiometricToggle() },
-                            colors = SwitchDefaults.colors(
-                                checkedThumbColor = Color.White,
-                                checkedTrackColor = MaterialTheme.colorScheme.primary
+        FadeInSlideUp(delayMillis = 380) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 32.dp),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Column {
+                    // Biometric Login Row
+                    ProfileSettingRow(
+                        iconResId = R.drawable.icon_biomatric,
+                        title = "Biometric Login",
+                        subtitle = "Face ID / Touch ID",
+                        action = {
+                            Switch(
+                                checked = isBiometricEnabled,
+                                onCheckedChange = { onBiometricToggle() },
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = Color.White,
+                                    checkedTrackColor = MaterialTheme.colorScheme.primary
+                                )
                             )
-                        )
-                    }
-                )
+                        }
+                    )
 
-                HorizontalDivider(
-                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                )
+                    HorizontalDivider(
+                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
 
-                // Export Statement Row
-                ProfileSettingRow(
-                    iconResId = R.drawable.icon_download,
-                    title = "Export Statement",
-                    subtitle = "Download data as PDF",
-                    action = {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                            contentDescription = "Navigate",
-                            tint = MaterialTheme.colorScheme.secondary
-                        )
-                    },
-                    modifier = Modifier.clickable { /* Export logic */ }
-                )
+                    // Export Statement Row
+                    ProfileSettingRow(
+                        iconResId = R.drawable.icon_download,
+                        title = "Export Statement",
+                        subtitle = "Download data as PDF",
+                        action = {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                contentDescription = "Navigate",
+                                tint = MaterialTheme.colorScheme.secondary
+                            )
+                        },
+                        modifier = Modifier.clickable { /* Export logic */ }
+                    )
+                }
             }
         }
 
         // Log Out Button Card
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { onLogout() },
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-        ) {
-            Row(
+        FadeInSlideUp(delayMillis = 460) {
+            Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
+                    .clickable { onLogout() },
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ExitToApp,
-                    contentDescription = "Log Out",
-                    tint = Color(0xFFEF4444)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Log Out",
-                    color = Color(0xFFEF4444),
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
-                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                        contentDescription = "Log Out",
+                        tint = Color(0xFFEF4444)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Log Out",
+                        color = Color(0xFFEF4444),
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
+                    )
+                }
             }
         }
     }

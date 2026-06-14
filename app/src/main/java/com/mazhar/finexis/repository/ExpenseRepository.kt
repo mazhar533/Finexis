@@ -12,29 +12,8 @@ class ExpenseRepository {
     private var auth: FirebaseAuth? = null
     private var isMockMode = false
 
-    // Single source of truth flow pre-populated with mock data
-    private val expensesState = MutableStateFlow<List<Expense>>(
-        listOf(
-            Expense(
-                id = "1",
-                amount = 1390.0,
-                category = "Transport",
-                date = System.currentTimeMillis() - 86400000, // 1 day ago
-                paymentMethod = "Card",
-                description = "Daily commute to office",
-                isIncome = false
-            ),
-            Expense(
-                id = "2",
-                amount = 27800.0,
-                category = "Salary",
-                date = System.currentTimeMillis() - 172800000, // 2 days ago
-                paymentMethod = "Cash",
-                description = "Monthly salary payout",
-                isIncome = true
-            )
-        )
-    )
+    // Single source of truth flow starting with no dummy data
+    private val expensesState = MutableStateFlow<List<Expense>>(emptyList())
 
     init {
         try {

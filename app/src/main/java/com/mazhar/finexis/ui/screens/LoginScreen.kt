@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -46,12 +47,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mazhar.finexis.R
 import com.mazhar.finexis.ui.components.FinexisButton
 import com.mazhar.finexis.ui.components.FinexisTextField
-import com.mazhar.finexis.ui.theme.FinexisBg
-import com.mazhar.finexis.ui.theme.FinexisBorder
 import com.mazhar.finexis.ui.theme.FinexisPrimary
-import com.mazhar.finexis.ui.theme.FinexisSurface
-import com.mazhar.finexis.ui.theme.FinexisTextPrimary
-import com.mazhar.finexis.ui.theme.FinexisTextSecondary
 import com.mazhar.finexis.ui.theme.FinexisTheme
 import com.mazhar.finexis.viewmodel.AuthViewModel
 
@@ -101,7 +97,7 @@ fun LoginScreenContent(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(FinexisBg)
+            .background(MaterialTheme.colorScheme.background)
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 24.dp, vertical = 40.dp),
         horizontalAlignment = Alignment.Start
@@ -130,7 +126,7 @@ fun LoginScreenContent(
             text = "Finexis",
             fontSize = 36.sp,
             fontWeight = FontWeight.Bold,
-            color = FinexisTextPrimary
+            color = MaterialTheme.colorScheme.onBackground
         )
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -139,7 +135,7 @@ fun LoginScreenContent(
         Text(
             text = "Secure, premium wealth management.",
             fontSize = 16.sp,
-            color = FinexisTextSecondary
+            color = MaterialTheme.colorScheme.secondary
         )
 
         Spacer(modifier = Modifier.height(48.dp))
@@ -149,26 +145,23 @@ fun LoginScreenContent(
             value = email,
             onValueChange = { email = it },
             label = "Email Address",
-            placeholder = "hello@example.com",
-            keyboardType = KeyboardType.Email,
-            modifier = Modifier.fillMaxWidth()
+            placeholder = "name@domain.com",
+            keyboardType = KeyboardType.Email
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
         FinexisTextField(
             value = password,
             onValueChange = { password = it },
             label = "Password",
-            placeholder = "••••••••",
-            isPassword = true,
-            keyboardType = KeyboardType.Password,
-            modifier = Modifier.fillMaxWidth()
+            placeholder = "Enter password",
+            isPassword = true
         )
 
-        Spacer(modifier = Modifier.height(36.dp))
+        Spacer(modifier = Modifier.height(32.dp))
 
-        // Action Button
+        // Action Button or Loading Indicator
         if (isLoading) {
             Box(
                 modifier = Modifier.fillMaxWidth(),
@@ -179,39 +172,39 @@ fun LoginScreenContent(
         } else {
             FinexisButton(
                 text = "Sign In",
+                onClick = { onLoginClick(email, password) },
                 showArrow = true,
-                onClick = {
-                    onLoginClick(email, password)
-                }
+                enabled = email.isNotEmpty() && password.isNotEmpty()
             )
         }
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Separator
+        // Divider
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth()
         ) {
             HorizontalDivider(
                 modifier = Modifier.weight(1f),
-                color = FinexisBorder
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
             )
             Text(
-                text = "Or continue with",
-                color = FinexisTextSecondary,
-                fontSize = 14.sp,
+                text = "OR",
+                fontSize = 13.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.7f),
                 modifier = Modifier.padding(horizontal = 16.dp)
             )
             HorizontalDivider(
                 modifier = Modifier.weight(1f),
-                color = FinexisBorder
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
             )
         }
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Biometric Button
+        // Biometric Button Section
         Column(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -220,8 +213,8 @@ fun LoginScreenContent(
                 modifier = Modifier
                     .size(64.dp)
                     .clip(CircleShape)
-                    .background(FinexisSurface)
-                    .border(1.dp, FinexisBorder, CircleShape)
+                    .background(MaterialTheme.colorScheme.surface)
+                    .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
                     .clickable {
                         Toast.makeText(context, "Biometric login simulated", Toast.LENGTH_SHORT).show()
                         onLoginClick("biometric@finexis.com", "biometric_pass")
@@ -239,7 +232,7 @@ fun LoginScreenContent(
 
             Text(
                 text = "Biometric Login",
-                color = FinexisTextSecondary,
+                color = MaterialTheme.colorScheme.secondary,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium
             )
@@ -258,7 +251,7 @@ fun LoginScreenContent(
 
         Text(
             text = footerText,
-            color = FinexisTextSecondary,
+            color = MaterialTheme.colorScheme.secondary,
             fontSize = 14.sp,
             textAlign = TextAlign.Center,
             modifier = Modifier
