@@ -98,7 +98,15 @@ fun MainContainerScreen(
                 modifier = Modifier.fillMaxSize()
             ) { page ->
                 when (page) {
-                    0 -> HomeScreen(viewModel = expenseViewModel, budgetViewModel = budgetViewModel)
+                    0 -> HomeScreen(
+                        viewModel = expenseViewModel,
+                        budgetViewModel = budgetViewModel,
+                        onNavigateToSettings = {
+                            coroutineScope.launch {
+                                pagerState.animateScrollToPage(4)
+                            }
+                        }
+                    )
                     1 -> HistoryScreen(viewModel = expenseViewModel)
                     2 -> AnalyticsScreen(viewModel = expenseViewModel)
                     3 -> BudgetScreen(viewModel = expenseViewModel, budgetViewModel = budgetViewModel)

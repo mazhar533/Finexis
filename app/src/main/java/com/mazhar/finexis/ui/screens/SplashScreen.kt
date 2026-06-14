@@ -53,8 +53,6 @@ fun SplashScreen(
             }
         }
     }
-
-    // Primary green brand color (Emerald Green)
     val backgroundColor = Color(0xFF00A86B)
 
     // Animation states

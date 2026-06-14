@@ -22,6 +22,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.Image
+import androidx.compose.ui.graphics.ColorFilter
 import com.mazhar.finexis.R
 import com.mazhar.finexis.ui.theme.*
 
@@ -86,51 +88,43 @@ fun HomeScreenContent(
             .padding(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 24.dp)
     ) {
 
-        // Header Section
+        // App Brand Top Bar
         FadeInSlideUp(delayMillis = 0) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 24.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                    .padding(bottom = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    // Circular profile image placeholder with avatar-like appearance
                     Box(
                         modifier = Modifier
-                            .size(48.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
+                            .size(36.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(MaterialTheme.colorScheme.primary),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = userName.take(1).uppercase(),
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontSize = 20.sp
+                        Image(
+                            painter = painterResource(id = R.drawable.icon_app),
+                            contentDescription = "Finexis Logo",
+                            modifier = Modifier.size(20.dp),
+                            colorFilter = ColorFilter.tint(Color.White)
                         )
                     }
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column {
-                        Text(
-                            text = "Good morning,",
-                            fontSize = 14.sp,
-                            color = MaterialTheme.colorScheme.secondary
-                        )
-                        Text(
-                            text = userName,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
-                    }
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text(
+                        text = "Finexis",
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
                 }
 
-                //Settings Button
+                // Settings Button in Brand Bar
                 Box(
                     modifier = Modifier
-                        .size(44.dp)
+                        .size(40.dp)
                         .clip(CircleShape)
                         .background(MaterialTheme.colorScheme.surface)
                         .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
@@ -141,7 +135,47 @@ fun HomeScreenContent(
                         painter = painterResource(id = R.drawable.icon_setting),
                         contentDescription = "Settings",
                         tint = MaterialTheme.colorScheme.onBackground,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+        }
+
+        // Greeting Row Below Brand Bar
+        FadeInSlideUp(delayMillis = 50) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 24.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Circular profile image placeholder with avatar-like appearance
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = userName.take(1).uppercase(),
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontSize = 18.sp
+                    )
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Column {
+                    Text(
+                        text = "Good morning,",
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                    Text(
+                        text = userName,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
                     )
                 }
             }

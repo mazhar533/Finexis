@@ -3,11 +3,16 @@ package com.mazhar.finexis.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
@@ -40,6 +45,8 @@ fun HistoryScreen(
 ) {
     val expenses by viewModel.expenses.collectAsState()
     var selectedFilter by remember { mutableStateOf("All") }
+    var selectedDateFilter by remember { mutableStateOf("All Time") }
+    var selectedCategoryFilter by remember { mutableStateOf("All") }
     var searchQuery by remember { mutableStateOf("") }
 
     var expenseToEdit by remember { mutableStateOf<Expense?>(null) }
@@ -49,6 +56,10 @@ fun HistoryScreen(
         onSearchQueryChange = { searchQuery = it },
         selectedFilter = selectedFilter,
         onFilterSelect = { selectedFilter = it },
+        selectedDateFilter = selectedDateFilter,
+        onDateFilterSelect = { selectedDateFilter = it },
+        selectedCategoryFilter = selectedCategoryFilter,
+        onCategoryFilterSelect = { selectedCategoryFilter = it },
         expenses = expenses,
         onDeleteTransaction = { id -> viewModel.deleteExpense(id) },
         onEditTransaction = { expense -> expenseToEdit = expense },
@@ -81,11 +92,28 @@ fun HistoryScreenContent(
     onSearchQueryChange: (String) -> Unit,
     selectedFilter: String,
     onFilterSelect: (String) -> Unit,
+    selectedDateFilter: String,
+    onDateFilterSelect: (String) -> Unit,
+    selectedCategoryFilter: String,
+    onCategoryFilterSelect: (String) -> Unit,
     expenses: List<Expense>,
     onDeleteTransaction: (String) -> Unit,
     onEditTransaction: (Expense) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val filterScrollConnection = remember {
+        object : NestedScrollConnection {
+            override fun onPostScroll(
+                consumed: Offset,
+                available: Offset,
+                source: NestedScrollSource
+            ): Offset {
+                // Consume horizontal scroll to prevent page swiping on boundaries
+                return Offset(x = available.x, y = 0f)
+            }
+        }
+    }
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -124,35 +152,141 @@ fun HistoryScreenContent(
             }
         }
 
-        // Filter Pills
-        FadeInSlideUp(delayMillis = 100) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 20.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                val filters = listOf("All", "Expense", "Income")
-                filters.forEach { filter ->
-                    val isActive = selectedFilter == filter
-                    val bgColor = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface
-                    val textColor = if (isActive) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
-                    val borderColor = if (isActive) Color.Transparent else MaterialTheme.colorScheme.outline
-
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(14.dp))
-                            .background(bgColor)
-                            .border(1.dp, borderColor, RoundedCornerShape(14.dp))
-                            .clickable { onFilterSelect(filter) }
-                            .padding(horizontal = 20.dp, vertical = 10.dp)
+        // Filtering Section: Type, Date, Category
+        Column(
+            modifier = Modifier
+                .padding(bottom = 20.dp)
+                .nestedScroll(filterScrollConnection),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // 1. Filter by Type
+            FadeInSlideUp(delayMillis = 80) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "Type:",
+                        color = MaterialTheme.colorScheme.secondary,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.width(75.dp)
+                    )
+                    Row(
+                        modifier = Modifier.horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Text(
-                            text = filter,
-                            color = textColor,
-                            fontWeight = FontWeight.Medium,
-                            fontSize = 14.sp
-                        )
+                        val filters = listOf("All", "Expense", "Income")
+                        filters.forEach { filter ->
+                            val isActive = selectedFilter == filter
+                            val bgColor = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface
+                            val textColor = if (isActive) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+                            val borderColor = if (isActive) Color.Transparent else MaterialTheme.colorScheme.outline
+
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(bgColor)
+                                    .border(1.dp, borderColor, RoundedCornerShape(12.dp))
+                                    .clickable { onFilterSelect(filter) }
+                                    .padding(horizontal = 14.dp, vertical = 8.dp)
+                            ) {
+                                Text(
+                                    text = filter,
+                                    color = textColor,
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 13.sp
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 2. Filter by Date Range
+            FadeInSlideUp(delayMillis = 120) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "Date:",
+                        color = MaterialTheme.colorScheme.secondary,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.width(75.dp)
+                    )
+                    Row(
+                        modifier = Modifier.horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        val dateFilters = listOf("All Time", "Today", "This Week", "This Month")
+                        dateFilters.forEach { filter ->
+                            val isActive = selectedDateFilter == filter
+                            val bgColor = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface
+                            val textColor = if (isActive) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+                            val borderColor = if (isActive) Color.Transparent else MaterialTheme.colorScheme.outline
+
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(bgColor)
+                                    .border(1.dp, borderColor, RoundedCornerShape(12.dp))
+                                    .clickable { onDateFilterSelect(filter) }
+                                    .padding(horizontal = 14.dp, vertical = 8.dp)
+                            ) {
+                                Text(
+                                    text = filter,
+                                    color = textColor,
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 13.sp
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 3. Filter by Category
+            FadeInSlideUp(delayMillis = 160) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "Category:",
+                        color = MaterialTheme.colorScheme.secondary,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.width(75.dp)
+                    )
+                    Row(
+                        modifier = Modifier.horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        val categoryFilters = listOf("All", "Salary", "Food", "Transport", "Shopping", "Other")
+                        categoryFilters.forEach { filter ->
+                            val isActive = selectedCategoryFilter == filter
+                            val bgColor = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surface
+                            val textColor = if (isActive) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+                            val borderColor = if (isActive) Color.Transparent else MaterialTheme.colorScheme.outline
+
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(bgColor)
+                                    .border(1.dp, borderColor, RoundedCornerShape(12.dp))
+                                    .clickable { onCategoryFilterSelect(filter) }
+                                    .padding(horizontal = 14.dp, vertical = 8.dp)
+                            ) {
+                                Text(
+                                    text = filter,
+                                    color = textColor,
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 13.sp
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -163,17 +297,58 @@ fun HistoryScreenContent(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             val filteredExpenses = expenses.filter {
-                val matchesSearch = it.category.contains(searchQuery, ignoreCase = true) || it.description.contains(searchQuery, ignoreCase = true)
+                val matchesSearch = it.category.contains(searchQuery, ignoreCase = true) || 
+                                    it.description.contains(searchQuery, ignoreCase = true)
+                
                 val matchesFilter = when (selectedFilter) {
                     "Expense" -> !it.isIncome
                     "Income" -> it.isIncome
                     else -> true
                 }
-                matchesSearch && matchesFilter
+
+                val matchesDate = when (selectedDateFilter) {
+                    "Today" -> {
+                        val today = Calendar.getInstance().apply {
+                            set(Calendar.HOUR_OF_DAY, 0)
+                            set(Calendar.MINUTE, 0)
+                            set(Calendar.SECOND, 0)
+                            set(Calendar.MILLISECOND, 0)
+                        }.timeInMillis
+                        it.date >= today
+                    }
+                    "This Week" -> {
+                        val thisWeek = Calendar.getInstance().apply {
+                            set(Calendar.DAY_OF_WEEK, firstDayOfWeek)
+                            set(Calendar.HOUR_OF_DAY, 0)
+                            set(Calendar.MINUTE, 0)
+                            set(Calendar.SECOND, 0)
+                            set(Calendar.MILLISECOND, 0)
+                        }.timeInMillis
+                        it.date >= thisWeek
+                    }
+                    "This Month" -> {
+                        val thisMonth = Calendar.getInstance().apply {
+                            set(Calendar.DAY_OF_MONTH, 1)
+                            set(Calendar.HOUR_OF_DAY, 0)
+                            set(Calendar.MINUTE, 0)
+                            set(Calendar.SECOND, 0)
+                            set(Calendar.MILLISECOND, 0)
+                        }.timeInMillis
+                        it.date >= thisMonth
+                    }
+                    else -> true
+                }
+
+                val matchesCategory = when (selectedCategoryFilter) {
+                    "All" -> true
+                    else -> it.category.equals(selectedCategoryFilter, ignoreCase = true)
+                }
+
+                matchesSearch && matchesFilter && matchesDate && matchesCategory
             }
 
             filteredExpenses.forEachIndexed { index, expense ->
-                StaggeredItem(index = index + 3) {
+                StaggeredItem(index = index + 5) {
                     HistoryTransactionRow(
                         expense = expense,
                         onDelete = { onDeleteTransaction(expense.id) },
@@ -213,6 +388,7 @@ fun HistoryTransactionRow(
     Card(
         modifier = Modifier
             .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
             .clickable { onEdit() },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -290,6 +466,10 @@ fun HistoryScreenLightPreview() {
             onSearchQueryChange = {},
             selectedFilter = "All",
             onFilterSelect = {},
+            selectedDateFilter = "All Time",
+            onDateFilterSelect = {},
+            selectedCategoryFilter = "All",
+            onCategoryFilterSelect = {},
             expenses = listOf(
                 Expense(id = "1", amount = 1390.0, category = "Transport", paymentMethod = "Card", description = "Daily commute", isIncome = false),
                 Expense(id = "2", amount = 27800.0, category = "Salary", paymentMethod = "Cash", description = "Monthly salary payout", isIncome = true),
@@ -310,6 +490,10 @@ fun HistoryScreenDarkPreview() {
             onSearchQueryChange = {},
             selectedFilter = "All",
             onFilterSelect = {},
+            selectedDateFilter = "All Time",
+            onDateFilterSelect = {},
+            selectedCategoryFilter = "All",
+            onCategoryFilterSelect = {},
             expenses = listOf(
                 Expense(id = "1", amount = 1390.0, category = "Transport", paymentMethod = "Card", description = "Daily commute", isIncome = false),
                 Expense(id = "2", amount = 27800.0, category = "Salary", paymentMethod = "Cash", description = "Monthly salary payout", isIncome = true),
