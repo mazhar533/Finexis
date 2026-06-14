@@ -25,6 +25,7 @@ import com.mazhar.finexis.ui.theme.*
 import com.mazhar.finexis.viewmodel.ExpenseViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.platform.LocalContext
 import com.mazhar.finexis.ui.components.FadeInSlideUp
 import com.mazhar.finexis.ui.components.StaggeredItem
 import com.mazhar.finexis.model.Expense
@@ -46,6 +47,7 @@ fun AnalyticsScreen(
     currency: String = "PKR"
 ) {
     val expenses by viewModel.expenses.collectAsState()
+    val context = LocalContext.current
 
     val totalIncome = expenses.filter { it.isIncome }.sumOf { it.amount }
     val totalExpenses = expenses.filter { !it.isIncome }.sumOf { it.amount }
@@ -108,7 +110,16 @@ fun AnalyticsScreen(
         expenses = expenses,
         currency = currency,
         modifier = modifier,
-        onExportPdf = {}
+        onExportPdf = {
+            com.mazhar.finexis.ui.utils.PdfExportHelper.exportTransactionsToPdf(
+                context = context,
+                expenses = expenses,
+                currency = currency,
+                totalIncome = totalIncome,
+                totalExpenses = totalExpenses,
+                savings = savings
+            )
+        }
     )
 }
 

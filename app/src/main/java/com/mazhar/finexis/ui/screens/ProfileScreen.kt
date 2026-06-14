@@ -28,6 +28,8 @@ import com.mazhar.finexis.R
 import com.mazhar.finexis.ui.theme.*
 import com.mazhar.finexis.viewmodel.AuthViewModel
 import com.mazhar.finexis.viewmodel.PreferenceViewModel
+import com.mazhar.finexis.viewmodel.ExpenseViewModel
+import androidx.compose.ui.platform.LocalContext
 import com.mazhar.finexis.ui.components.FadeInSlideUp
 import com.mazhar.finexis.ui.components.AccountInfoBottomSheet
 
@@ -37,11 +39,14 @@ fun ProfileScreen(
     onLogoutSuccess: () -> Unit,
     modifier: Modifier = Modifier,
     authViewModel: AuthViewModel = viewModel(),
-    preferenceViewModel: PreferenceViewModel = viewModel()
+    preferenceViewModel: PreferenceViewModel = viewModel(),
+    expenseViewModel: ExpenseViewModel = viewModel()
 ) {
     val currentUserEmail by authViewModel.currentUser.collectAsState()
     val displayNameState by authViewModel.displayName.collectAsState()
     val isVerified by authViewModel.isEmailVerified.collectAsState()
+    val expenses by expenseViewModel.expenses.collectAsState()
+    val context = LocalContext.current
     
     val emailToDisplay = currentUserEmail ?: "mazharalihaider4@gmail.com"
     
@@ -71,6 +76,20 @@ fun ProfileScreen(
         onLogout = {
             authViewModel.logout()
             onLogoutSuccess()
+        },
+        onExportPdf = {
+            val incomeAmount = expenses.filter { it.isIncome }.sumOf { it.amount }
+            val expenseAmount = expenses.filter { !it.isIncome }.sumOf { it.amount }
+            val savingsAmount = incomeAmount - expenseAmount
+
+            com.mazhar.finexis.ui.utils.PdfExportHelper.exportTransactionsToPdf(
+                context = context,
+                expenses = expenses,
+                currency = currency,
+                totalIncome = incomeAmount,
+                totalExpenses = expenseAmount,
+                savings = savingsAmount
+            )
         },
         modifier = modifier
     )
@@ -162,6 +181,7 @@ fun ProfileScreenContent(
     onBiometricToggle: () -> Unit,
     onCurrencyToggle: () -> Unit,
     onLogout: () -> Unit,
+    onExportPdf: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -392,7 +412,7 @@ fun ProfileScreenContent(
                                 tint = MaterialTheme.colorScheme.secondary
                             )
                         },
-                        modifier = Modifier.clickable { /* Export logic */ }
+                        modifier = Modifier.clickable { onExportPdf() }
                     )
                 }
             }
