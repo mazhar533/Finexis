@@ -27,10 +27,12 @@ import androidx.compose.ui.unit.sp
 import com.mazhar.finexis.R
 import com.mazhar.finexis.model.Budget
 import com.mazhar.finexis.ui.theme.*
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BudgetDialog(
+    currency: String,
     currentBudget: Budget,
     onDismiss: () -> Unit,
     onConfirm: (monthlyLimit: Double, foodLimit: Double, transportLimit: Double, shoppingLimit: Double, otherLimit: Double) -> Unit
@@ -38,11 +40,32 @@ fun BudgetDialog(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     // Form States
-    var monthlyLimit by remember { mutableStateOf(currentBudget.monthlyLimit.toString()) }
-    var foodLimit by remember { mutableStateOf(currentBudget.foodLimit.toString()) }
-    var transportLimit by remember { mutableStateOf(currentBudget.transportLimit.toString()) }
-    var shoppingLimit by remember { mutableStateOf(currentBudget.shoppingLimit.toString()) }
-    var otherLimit by remember { mutableStateOf(currentBudget.otherLimit.toString()) }
+    val initialMonthly = remember(currentBudget.monthlyLimit, currency) {
+        val converted = com.mazhar.finexis.ui.utils.CurrencyHelper.convertPkrToActive(currentBudget.monthlyLimit, currency)
+        if (converted % 1.0 == 0.0) converted.toInt().toString() else String.format(Locale.US, "%.2f", converted)
+    }
+    val initialFood = remember(currentBudget.foodLimit, currency) {
+        val converted = com.mazhar.finexis.ui.utils.CurrencyHelper.convertPkrToActive(currentBudget.foodLimit, currency)
+        if (converted % 1.0 == 0.0) converted.toInt().toString() else String.format(Locale.US, "%.2f", converted)
+    }
+    val initialTransport = remember(currentBudget.transportLimit, currency) {
+        val converted = com.mazhar.finexis.ui.utils.CurrencyHelper.convertPkrToActive(currentBudget.transportLimit, currency)
+        if (converted % 1.0 == 0.0) converted.toInt().toString() else String.format(Locale.US, "%.2f", converted)
+    }
+    val initialShopping = remember(currentBudget.shoppingLimit, currency) {
+        val converted = com.mazhar.finexis.ui.utils.CurrencyHelper.convertPkrToActive(currentBudget.shoppingLimit, currency)
+        if (converted % 1.0 == 0.0) converted.toInt().toString() else String.format(Locale.US, "%.2f", converted)
+    }
+    val initialOther = remember(currentBudget.otherLimit, currency) {
+        val converted = com.mazhar.finexis.ui.utils.CurrencyHelper.convertPkrToActive(currentBudget.otherLimit, currency)
+        if (converted % 1.0 == 0.0) converted.toInt().toString() else String.format(Locale.US, "%.2f", converted)
+    }
+
+    var monthlyLimit by remember { mutableStateOf(initialMonthly) }
+    var foodLimit by remember { mutableStateOf(initialFood) }
+    var transportLimit by remember { mutableStateOf(initialTransport) }
+    var shoppingLimit by remember { mutableStateOf(initialShopping) }
+    var otherLimit by remember { mutableStateOf(initialOther) }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -121,7 +144,7 @@ fun BudgetDialog(
                         }
                     },
                     placeholder = { Text("Enter monthly limit", color = MaterialTheme.colorScheme.outline) },
-                    prefix = { Text("Rs ", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary) },
+                    prefix = { Text(com.mazhar.finexis.ui.utils.CurrencyHelper.getSymbol(currency).trim(), fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary) },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -155,12 +178,13 @@ fun BudgetDialog(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Food Limit
+                 // Food Limit
                 CategoryBudgetField(
                     label = "Food Limit",
                     iconResId = R.drawable.icon_food,
                     iconTint = Color(0xFFF59E0B),
                     value = foodLimit,
+                    currency = currency,
                     onValueChange = { foodLimit = it }
                 )
 
@@ -170,6 +194,7 @@ fun BudgetDialog(
                     iconResId = R.drawable.icon_transport,
                     iconTint = Color(0xFF3B82F6),
                     value = transportLimit,
+                    currency = currency,
                     onValueChange = { transportLimit = it }
                 )
 
@@ -179,6 +204,7 @@ fun BudgetDialog(
                     iconResId = R.drawable.icon_shoping,
                     iconTint = Color(0xFFEC4899),
                     value = shoppingLimit,
+                    currency = currency,
                     onValueChange = { shoppingLimit = it }
                 )
 
@@ -188,6 +214,7 @@ fun BudgetDialog(
                     iconResId = R.drawable.icon_app,
                     iconTint = Color(0xFF8B5CF6),
                     value = otherLimit,
+                    currency = currency,
                     onValueChange = { otherLimit = it }
                 )
             }
@@ -243,6 +270,7 @@ fun CategoryBudgetField(
     iconResId: Int,
     iconTint: Color,
     value: String,
+    currency: String,
     onValueChange: (String) -> Unit
 ) {
     Row(
@@ -285,7 +313,7 @@ fun CategoryBudgetField(
                 }
             },
             placeholder = { Text("0.00", color = MaterialTheme.colorScheme.outline) },
-            prefix = { Text("Rs ", fontSize = 12.sp, color = MaterialTheme.colorScheme.secondary) },
+            prefix = { Text(com.mazhar.finexis.ui.utils.CurrencyHelper.getSymbol(currency).trim(), fontSize = 12.sp, color = MaterialTheme.colorScheme.secondary) },
             modifier = Modifier.width(140.dp),
             shape = RoundedCornerShape(12.dp),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -310,7 +338,8 @@ fun BudgetBottomSheetLightPreview() {
                 .background(MaterialTheme.colorScheme.background)
                 .padding(24.dp)
         ) {
-            BudgetDialog(
+             BudgetDialog(
+                currency = "PKR",
                 currentBudget = Budget(),
                 onDismiss = {},
                 onConfirm = { _, _, _, _, _ -> }

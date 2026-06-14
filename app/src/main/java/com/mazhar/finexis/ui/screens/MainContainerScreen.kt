@@ -61,6 +61,7 @@ fun MainContainerScreen(
 
     val expenses by expenseViewModel.expenses.collectAsState()
     val budgetState by budgetViewModel.budget.collectAsState()
+    val currency by preferenceViewModel.currency.collectAsState()
     val context = LocalContext.current
 
     // Keep track of already warned limits in memory for this session
@@ -196,15 +197,19 @@ fun MainContainerScreen(
                     0 -> HomeScreen(
                         viewModel = expenseViewModel,
                         budgetViewModel = budgetViewModel,
+                        currency = currency,
+                        onCurrencyChange = { newCurrency ->
+                            preferenceViewModel.setCurrency(newCurrency)
+                        },
                         onNavigateToSettings = {
                             coroutineScope.launch {
                                 pagerState.animateScrollToPage(4)
                             }
                         }
                     )
-                    1 -> HistoryScreen(viewModel = expenseViewModel)
-                    2 -> AnalyticsScreen(viewModel = expenseViewModel)
-                    3 -> BudgetScreen(viewModel = expenseViewModel, budgetViewModel = budgetViewModel)
+                    1 -> HistoryScreen(viewModel = expenseViewModel, currency = currency)
+                    2 -> AnalyticsScreen(viewModel = expenseViewModel, currency = currency)
+                    3 -> BudgetScreen(viewModel = expenseViewModel, budgetViewModel = budgetViewModel, currency = currency)
                     4 -> ProfileScreen(onLogoutSuccess = onLogoutSuccess, preferenceViewModel = preferenceViewModel)
                 }
             }
@@ -212,10 +217,12 @@ fun MainContainerScreen(
 
         if (showExpenseDialog) {
             ExpenseDialog(
+                currency = currency,
                 onDismiss = { showExpenseDialog = false },
                 onConfirm = { amount, category, date, paymentMethod, description, isIncome ->
+                    val amountInPkr = com.mazhar.finexis.ui.utils.CurrencyHelper.convertActiveToPkr(amount, currency)
                     expenseViewModel.addExpense(
-                        amount = amount,
+                        amount = amountInPkr,
                         category = category,
                         date = date,
                         paymentMethod = paymentMethod,

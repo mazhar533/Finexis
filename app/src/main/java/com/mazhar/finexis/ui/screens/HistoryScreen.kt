@@ -41,7 +41,8 @@ import java.util.*
 @Composable
 fun HistoryScreen(
     modifier: Modifier = Modifier,
-    viewModel: ExpenseViewModel = viewModel()
+    viewModel: ExpenseViewModel = viewModel(),
+    currency: String = "PKR"
 ) {
     val expenses by viewModel.expenses.collectAsState()
     var selectedFilter by remember { mutableStateOf("All") }
@@ -61,6 +62,7 @@ fun HistoryScreen(
         selectedCategoryFilter = selectedCategoryFilter,
         onCategoryFilterSelect = { selectedCategoryFilter = it },
         expenses = expenses,
+        currency = currency,
         onDeleteTransaction = { id -> viewModel.deleteExpense(id) },
         onEditTransaction = { expense -> expenseToEdit = expense },
         modifier = modifier
@@ -68,12 +70,14 @@ fun HistoryScreen(
 
     if (expenseToEdit != null) {
         ExpenseDialog(
+            currency = currency,
             expenseToEdit = expenseToEdit,
             onDismiss = { expenseToEdit = null },
             onConfirm = { amount, category, date, paymentMethod, description, isIncome ->
+                val amountInPkr = com.mazhar.finexis.ui.utils.CurrencyHelper.convertActiveToPkr(amount, currency)
                 viewModel.editExpense(
                     id = expenseToEdit!!.id,
-                    amount = amount,
+                    amount = amountInPkr,
                     category = category,
                     date = date,
                     paymentMethod = paymentMethod,
@@ -97,6 +101,7 @@ fun HistoryScreenContent(
     selectedCategoryFilter: String,
     onCategoryFilterSelect: (String) -> Unit,
     expenses: List<Expense>,
+    currency: String,
     onDeleteTransaction: (String) -> Unit,
     onEditTransaction: (Expense) -> Unit,
     modifier: Modifier = Modifier
@@ -351,6 +356,7 @@ fun HistoryScreenContent(
                 StaggeredItem(index = index + 5) {
                     HistoryTransactionRow(
                         expense = expense,
+                        currency = currency,
                         onDelete = { onDeleteTransaction(expense.id) },
                         onEdit = { onEditTransaction(expense) }
                     )
@@ -363,6 +369,7 @@ fun HistoryScreenContent(
 @Composable
 fun HistoryTransactionRow(
     expense: Expense,
+    currency: String,
     onDelete: () -> Unit,
     onEdit: () -> Unit
 ) {
@@ -436,7 +443,7 @@ fun HistoryTransactionRow(
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = if (expense.isIncome) "+Rs ${String.format("%.2f", expense.amount)}" else "-Rs ${String.format("%.2f", expense.amount)}",
+                    text = com.mazhar.finexis.ui.utils.CurrencyHelper.formatSigned(expense.amount, currency, expense.isIncome, showDecimal = true),
                     fontWeight = FontWeight.Bold,
                     color = if (expense.isIncome) FinexisIncome else FinexisExpense,
                     fontSize = 15.sp
@@ -475,6 +482,7 @@ fun HistoryScreenLightPreview() {
                 Expense(id = "2", amount = 27800.0, category = "Salary", paymentMethod = "Cash", description = "Monthly salary payout", isIncome = true),
                 Expense(id = "3", amount = 50.0, category = "Food", paymentMethod = "Cash", description = "Coffee", isIncome = false)
             ),
+            currency = "PKR",
             onDeleteTransaction = {},
             onEditTransaction = {}
         )
@@ -499,6 +507,7 @@ fun HistoryScreenDarkPreview() {
                 Expense(id = "2", amount = 27800.0, category = "Salary", paymentMethod = "Cash", description = "Monthly salary payout", isIncome = true),
                 Expense(id = "3", amount = 50.0, category = "Food", paymentMethod = "Cash", description = "Coffee", isIncome = false)
             ),
+            currency = "USD",
             onDeleteTransaction = {},
             onEditTransaction = {}
         )

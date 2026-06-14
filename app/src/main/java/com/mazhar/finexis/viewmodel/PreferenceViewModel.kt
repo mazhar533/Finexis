@@ -3,6 +3,9 @@ package com.mazhar.finexis.viewmodel
 import android.app.Application
 import android.content.Context
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -25,6 +28,11 @@ class PreferenceViewModel(application: Application) : AndroidViewModel(applicati
     private val _isOnboardingCompleted = MutableStateFlow(sharedPrefs?.getBoolean("onboarding_completed", false) ?: false)
     val isOnboardingCompleted: StateFlow<Boolean> = _isOnboardingCompleted
 
+    init {
+        loadRatesFromCache()
+        fetchExchangeRates()
+    }
+
     fun toggleTheme() {
         val newValue = !_isDarkMode.value
         _isDarkMode.value = newValue
@@ -45,5 +53,70 @@ class PreferenceViewModel(application: Application) : AndroidViewModel(applicati
     fun completeOnboarding() {
         _isOnboardingCompleted.value = true
         sharedPrefs?.edit()?.putBoolean("onboarding_completed", true)?.apply()
+    }
+
+    private fun loadRatesFromCache() {
+        val map = mutableMapOf<String, Double>()
+        val keys = listOf("pkr", "usd", "eur", "gbp", "inr", "sar", "aed")
+        keys.forEach { key ->
+            val rate = sharedPrefs?.getFloat("rate_$key", 0.0f)?.toDouble() ?: 0.0
+            if (rate > 0.0) {
+                map[key] = rate
+            }
+        }
+        if (map.isNotEmpty()) {
+            com.mazhar.finexis.ui.utils.CurrencyHelper.updateRates(map)
+        }
+    }
+
+    private fun saveRatesToCache(rates: Map<String, Double>) {
+        sharedPrefs?.edit()?.apply {
+            rates.forEach { (cur, rate) ->
+                putFloat("rate_$cur", rate.toFloat())
+            }
+            apply()
+        }
+    }
+
+    private fun fetchExchangeRates() {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val url = java.net.URL("https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json")
+                val connection = url.openConnection() as java.net.HttpURLConnection
+                connection.requestMethod = "GET"
+                connection.connectTimeout = 5000
+                connection.readTimeout = 5000
+                
+                if (connection.responseCode == 200) {
+                    val text = connection.inputStream.bufferedReader().use { it.readText() }
+                    val rates = parseRatesFromJson(text)
+                    if (rates.isNotEmpty()) {
+                        com.mazhar.finexis.ui.utils.CurrencyHelper.updateRates(rates)
+                        saveRatesToCache(rates)
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    private fun parseRatesFromJson(jsonStr: String): Map<String, Double> {
+        val map = mutableMapOf<String, Double>()
+        try {
+            val jsonObject = org.json.JSONObject(jsonStr)
+            if (jsonObject.has("usd")) {
+                val usdObject = jsonObject.getJSONObject("usd")
+                val keys = listOf("pkr", "usd", "eur", "gbp", "inr", "sar", "aed")
+                for (key in keys) {
+                    if (usdObject.has(key)) {
+                        map[key] = usdObject.getDouble(key)
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return map
     }
 }

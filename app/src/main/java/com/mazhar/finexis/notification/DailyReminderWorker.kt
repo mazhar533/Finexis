@@ -12,10 +12,13 @@ class DailyReminderWorker(
     override suspend fun doWork(): Result {
         // Fetch today's progress cached by the UI
         val (spent, count) = NotificationHelper.getCachedDailySpentData(applicationContext)
+        val sharedPrefs = applicationContext.getSharedPreferences("finexis_prefs", Context.MODE_PRIVATE)
+        val currency = sharedPrefs.getString("currency", "PKR") ?: "PKR"
 
         if (count > 0) {
             val title = "Daily Expense Review 📊"
-            val message = "You spent a total of Rs ${String.format("%.2f", spent)} today. Review your $count transactions!"
+            val formattedSpent = com.mazhar.finexis.ui.utils.CurrencyHelper.format(spent, currency, showDecimal = true)
+            val message = "You spent a total of $formattedSpent today. Review your $count transactions!"
             NotificationHelper.showDailyReminder(applicationContext, title, message)
         } else {
             val title = "Log Your Expenses Today! ✍️"

@@ -41,7 +41,8 @@ data class CategoryBudget(
 fun BudgetScreen(
     modifier: Modifier = Modifier,
     viewModel: ExpenseViewModel = viewModel(),
-    budgetViewModel: BudgetViewModel = viewModel()
+    budgetViewModel: BudgetViewModel = viewModel(),
+    currency: String = "PKR"
 ) {
     val expenses by viewModel.expenses.collectAsState()
     val budgetState by budgetViewModel.budget.collectAsState()
@@ -64,21 +65,23 @@ fun BudgetScreen(
         budgetSpent = budgetSpent,
         budgetTotal = budgetTotal,
         categories = categoryBudgets,
+        currency = currency,
         modifier = modifier,
         onEditBudget = { showEditDialog = true }
     )
 
     if (showEditDialog) {
         BudgetDialog(
+            currency = currency,
             currentBudget = budgetState,
             onDismiss = { showEditDialog = false },
             onConfirm = { monthlyLimit, foodLimit, transportLimit, shoppingLimit, otherLimit ->
                 budgetViewModel.saveBudget(
-                    monthlyLimit = monthlyLimit,
-                    foodLimit = foodLimit,
-                    transportLimit = transportLimit,
-                    shoppingLimit = shoppingLimit,
-                    otherLimit = otherLimit
+                    monthlyLimit = com.mazhar.finexis.ui.utils.CurrencyHelper.convertActiveToPkr(monthlyLimit, currency),
+                    foodLimit = com.mazhar.finexis.ui.utils.CurrencyHelper.convertActiveToPkr(foodLimit, currency),
+                    transportLimit = com.mazhar.finexis.ui.utils.CurrencyHelper.convertActiveToPkr(transportLimit, currency),
+                    shoppingLimit = com.mazhar.finexis.ui.utils.CurrencyHelper.convertActiveToPkr(shoppingLimit, currency),
+                    otherLimit = com.mazhar.finexis.ui.utils.CurrencyHelper.convertActiveToPkr(otherLimit, currency)
                 )
                 showEditDialog = false
             }
@@ -91,6 +94,7 @@ fun BudgetScreenContent(
     budgetSpent: Double,
     budgetTotal: Double,
     categories: List<CategoryBudget>,
+    currency: String,
     modifier: Modifier = Modifier,
     onEditBudget: () -> Unit = {}
 ) {
@@ -167,13 +171,13 @@ fun BudgetScreenContent(
                         verticalAlignment = Alignment.Bottom
                     ) {
                         Text(
-                            text = "Rs ${budgetSpent.toInt()}",
+                            text = com.mazhar.finexis.ui.utils.CurrencyHelper.format(budgetSpent, currency),
                             color = Color.White,
                             fontSize = 32.sp,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = " / Rs ${budgetTotal.toInt()}",
+                            text = " / " + com.mazhar.finexis.ui.utils.CurrencyHelper.format(budgetTotal, currency),
                             color = Color.White.copy(alpha = 0.5f),
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Medium,
@@ -186,7 +190,7 @@ fun BudgetScreenContent(
                     // Progress Bar
                     val percentUsed = if (budgetTotal > 0) (budgetSpent / budgetTotal) else 0.0
                     val percentInt = (percentUsed * 100).toInt()
-                    val budgetLeft = (budgetTotal - budgetSpent).toInt()
+                    val budgetLeft = budgetTotal - budgetSpent
 
                     LinearProgressIndicator(
                         progress = { percentUsed.toFloat() },
@@ -212,7 +216,7 @@ fun BudgetScreenContent(
                         )
 
                         Text(
-                            text = "Rs $budgetLeft left",
+                            text = "${com.mazhar.finexis.ui.utils.CurrencyHelper.format(budgetLeft, currency)} left",
                             color = FinexisPrimary,
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Bold
@@ -239,7 +243,7 @@ fun BudgetScreenContent(
         ) {
             categories.forEachIndexed { index, category ->
                 StaggeredItem(index = index + 3) {
-                    CategoryBudgetRow(category = category)
+                    CategoryBudgetRow(category = category, currency = currency)
                 }
             }
         }
@@ -247,7 +251,7 @@ fun BudgetScreenContent(
 }
 
 @Composable
-fun CategoryBudgetRow(category: CategoryBudget) {
+fun CategoryBudgetRow(category: CategoryBudget, currency: String) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -282,13 +286,13 @@ fun CategoryBudgetRow(category: CategoryBudget) {
                     verticalAlignment = Alignment.Bottom
                 ) {
                     Text(
-                        text = "Rs ${category.spent.toInt()}",
+                        text = com.mazhar.finexis.ui.utils.CurrencyHelper.format(category.spent, currency),
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = " / Rs ${category.totalLimit.toInt()}",
+                        text = " / " + com.mazhar.finexis.ui.utils.CurrencyHelper.format(category.totalLimit, currency),
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.secondary,
                         modifier = Modifier.padding(start = 2.dp)

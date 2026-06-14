@@ -42,7 +42,8 @@ data class CategorySpending(
 @Composable
 fun AnalyticsScreen(
     modifier: Modifier = Modifier,
-    viewModel: ExpenseViewModel = viewModel()
+    viewModel: ExpenseViewModel = viewModel(),
+    currency: String = "PKR"
 ) {
     val expenses by viewModel.expenses.collectAsState()
 
@@ -105,6 +106,7 @@ fun AnalyticsScreen(
         monthlyValues = monthlyValues,
         categories = categorySpendings,
         expenses = expenses,
+        currency = currency,
         modifier = modifier,
         onExportPdf = {}
     )
@@ -120,6 +122,7 @@ fun AnalyticsScreenContent(
     monthlyValues: List<Float>,
     categories: List<CategorySpending>,
     expenses: List<Expense>,
+    currency: String,
     modifier: Modifier = Modifier,
     onExportPdf: () -> Unit = {}
 ) {
@@ -211,7 +214,7 @@ fun AnalyticsScreenContent(
                         Text("Income", fontSize = 11.sp, color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.Medium)
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
-                            text = "Rs ${totalIncome.toInt()}",
+                            text = com.mazhar.finexis.ui.utils.CurrencyHelper.format(totalIncome, currency, showDecimal = false),
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
                             color = FinexisIncome
@@ -230,7 +233,7 @@ fun AnalyticsScreenContent(
                         Text("Expenses", fontSize = 11.sp, color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.Medium)
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
-                            text = "Rs ${totalExpenses.toInt()}",
+                            text = com.mazhar.finexis.ui.utils.CurrencyHelper.format(totalExpenses, currency, showDecimal = false),
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
                             color = FinexisExpense
@@ -249,7 +252,7 @@ fun AnalyticsScreenContent(
                         Text("Savings", fontSize = 11.sp, color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.Medium)
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
-                            text = "Rs ${savings.toInt()}",
+                            text = com.mazhar.finexis.ui.utils.CurrencyHelper.format(savings, currency, showDecimal = false),
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF00796B)
@@ -280,7 +283,7 @@ fun AnalyticsScreenContent(
                     Spacer(modifier = Modifier.height(4.dp))
                     val currentPeriodSpent = selectedMonthIndex?.let { monthlyValues.getOrNull(it)?.toInt() } ?: totalExpenses.toInt()
                     Text(
-                        text = "Rs $currentPeriodSpent",
+                        text = com.mazhar.finexis.ui.utils.CurrencyHelper.format(currentPeriodSpent.toDouble(), currency, showDecimal = false),
                         fontSize = 28.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -292,6 +295,7 @@ fun AnalyticsScreenContent(
                         days = months,
                         values = monthlyValues,
                         selectedIndex = selectedMonthIndex,
+                        currency = currency,
                         onBarClick = { idx ->
                             selectedMonthIndex = if (selectedMonthIndex == idx) null else idx
                         }
@@ -327,7 +331,7 @@ fun AnalyticsScreenContent(
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = "Total: Rs $totalMonthSpent",
+                                text = "Total: " + com.mazhar.finexis.ui.utils.CurrencyHelper.format(totalMonthSpent.toDouble(), currency, showDecimal = false),
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = FinexisExpense
@@ -384,7 +388,7 @@ fun AnalyticsScreenContent(
                                         }
                                     }
                                     Text(
-                                        text = "Rs ${expense.amount.toInt()}",
+                                        text = com.mazhar.finexis.ui.utils.CurrencyHelper.format(expense.amount, currency, showDecimal = false),
                                         fontSize = 15.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = FinexisExpense
@@ -483,7 +487,7 @@ fun AnalyticsScreenContent(
 
                                         val percentage = if (totalExpenses > 0) ((cat.amount / totalExpenses) * 100).toInt() else 0
                                         Text(
-                                            text = "Rs ${cat.amount.toInt()} ($percentage%)",
+                                            text = com.mazhar.finexis.ui.utils.CurrencyHelper.format(cat.amount, currency, showDecimal = false) + " (" + percentage + "%)",
                                             fontSize = 15.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = MaterialTheme.colorScheme.onSurface
@@ -554,7 +558,7 @@ fun AnalyticsScreenContent(
                                                         }
                                                     }
                                                     Text(
-                                                        text = "Rs ${expense.amount.toInt()}",
+                                                        text = com.mazhar.finexis.ui.utils.CurrencyHelper.format(expense.amount, currency, showDecimal = false),
                                                         fontSize = 14.sp,
                                                         fontWeight = FontWeight.Bold,
                                                         color = MaterialTheme.colorScheme.onSurface
@@ -573,17 +577,19 @@ fun AnalyticsScreenContent(
     }
 }
 
-private fun formatAmountCompact(amount: Float): String {
+private fun formatAmountCompact(amount: Float, currency: String): String {
+    val converted = com.mazhar.finexis.ui.utils.CurrencyHelper.convertPkrToActive(amount.toDouble(), currency).toFloat()
+    val symbol = com.mazhar.finexis.ui.utils.CurrencyHelper.getSymbol(currency)
     return when {
-        amount >= 1_000_000f -> {
-            val formatted = String.format(Locale.US, "%.1f", amount / 1_000_000f)
-            "Rs ${formatted.removeSuffix(".0")}M"
+        converted >= 1000000f -> {
+            val formatted = String.format(Locale.US, "%.1f", converted / 1000000f)
+            symbol + formatted.removeSuffix(".0") + "M"
         }
-        amount >= 1_000f -> {
-            val formatted = String.format(Locale.US, "%.1f", amount / 1_000f)
-            "Rs ${formatted.removeSuffix(".0")}k"
+        converted >= 1000f -> {
+            val formatted = String.format(Locale.US, "%.1f", converted / 1000f)
+            symbol + formatted.removeSuffix(".0") + "k"
         }
-        else -> "Rs ${amount.toInt()}"
+        else -> symbol + java.lang.Math.round(converted).toString()
     }
 }
 
@@ -592,6 +598,7 @@ fun SimpleBarChart(
     days: List<String>,
     values: List<Float>,
     selectedIndex: Int?,
+    currency: String,
     onBarClick: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -638,7 +645,7 @@ fun SimpleBarChart(
                                 .padding(horizontal = 8.dp, vertical = 4.dp)
                         ) {
                             Text(
-                                text = formatAmountCompact(value),
+                                text = formatAmountCompact(value, currency),
                                 color = Color.White,
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,

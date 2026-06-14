@@ -36,6 +36,7 @@ import com.mazhar.finexis.ui.components.StaggeredItem
 import java.text.SimpleDateFormat
 import java.util.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.ui.platform.LocalContext
 import com.mazhar.finexis.notification.NotificationHelper
@@ -47,6 +48,8 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     viewModel: ExpenseViewModel = viewModel(),
     budgetViewModel: BudgetViewModel = viewModel(),
+    currency: String = "PKR",
+    onCurrencyChange: (String) -> Unit = {},
     onNavigateToSettings: () -> Unit = {}
 ) {
     val expenses by viewModel.expenses.collectAsState()
@@ -55,6 +58,7 @@ fun HomeScreen(
 
     var unreadCount by remember { mutableStateOf(0) }
     var showNotifications by remember { mutableStateOf(false) }
+    var showCurrencyDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(expenses, budgetState, showNotifications) {
         unreadCount = NotificationHelper.getNotifications(context).count { !it.isRead }
@@ -76,8 +80,10 @@ fun HomeScreen(
         budgetSpent = budgetSpent,
         budgetTotal = budgetTotal,
         expenses = expenses.take(5),
+        currency = currency,
         unreadCount = unreadCount,
         onNotificationClick = { showNotifications = true },
+        onCurrencyClick = { showCurrencyDialog = true },
         modifier = modifier,
         onSettingsClick = onNavigateToSettings
     )
@@ -85,6 +91,69 @@ fun HomeScreen(
     if (showNotifications) {
         NotificationBottomSheet(
             onDismiss = { showNotifications = false }
+        )
+    }
+
+    if (showCurrencyDialog) {
+        AlertDialog(
+            onDismissRequest = { showCurrencyDialog = false },
+            title = {
+                Text(
+                    text = "Select Default Currency",
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+            },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    val currencies = listOf(
+                        "PKR" to "Pakistani Rupee (PKR)",
+                        "USD" to "US Dollar (USD)",
+                        "EUR" to "Euro (EUR)",
+                        "GBP" to "British Pound (GBP)",
+                        "INR" to "Indian Rupee (INR)",
+                        "SAR" to "Saudi Riyal (SAR)",
+                        "AED" to "UAE Dirham (AED)"
+                    )
+                    currencies.forEach { (code, name) ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    onCurrencyChange(code)
+                                    showCurrencyDialog = false
+                                }
+                                .padding(vertical = 12.dp, horizontal = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = name,
+                                fontSize = 15.sp,
+                                color = if (currency == code) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground,
+                                fontWeight = if (currency == code) FontWeight.Bold else FontWeight.Normal
+                            )
+                            if (currency == code) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = "Selected",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showCurrencyDialog = false }) {
+                    Text("Cancel", color = MaterialTheme.colorScheme.secondary)
+                }
+            },
+            containerColor = MaterialTheme.colorScheme.background
         )
     }
 }
@@ -99,8 +168,10 @@ fun HomeScreenContent(
     budgetSpent: Double,
     budgetTotal: Double,
     expenses: List<Expense>,
+    currency: String,
     unreadCount: Int = 0,
     onNotificationClick: () -> Unit = {},
+    onCurrencyClick: () -> Unit = {},
     modifier: Modifier = Modifier,
     onSettingsClick: () -> Unit = {}
 ) {
@@ -276,15 +347,16 @@ fun HomeScreenContent(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(12.dp))
                                 .background(Color.White.copy(alpha = 0.15f))
+                                .clickable { onCurrencyClick() }
                                 .padding(horizontal = 12.dp, vertical = 6.dp)
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
-                                    text = "PKR",
+                                    text = currency,
                                     color = Color.White,
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold
-                               )
+                                )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Icon(
                                     painter = painterResource(id = R.drawable.icon_arrow_down),
@@ -300,7 +372,7 @@ fun HomeScreenContent(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
-                        text = "Rs ${String.format("%.2f", totalBalance)}",
+                        text = com.mazhar.finexis.ui.utils.CurrencyHelper.format(totalBalance, currency, showDecimal = true),
                         color = Color.White,
                         fontSize = 32.sp,
                         fontWeight = FontWeight.Bold
@@ -338,7 +410,7 @@ fun HomeScreenContent(
                             }
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "Rs ${String.format("%.2f", incomeAmount)}",
+                                text = com.mazhar.finexis.ui.utils.CurrencyHelper.format(incomeAmount, currency, showDecimal = true),
                                 color = Color.White,
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold
@@ -380,7 +452,7 @@ fun HomeScreenContent(
                             }
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "Rs ${String.format("%.2f", expenseAmount)}",
+                                text = com.mazhar.finexis.ui.utils.CurrencyHelper.format(expenseAmount, currency, showDecimal = true),
                                 color = Color.White,
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold
@@ -432,7 +504,7 @@ fun HomeScreenContent(
                                 fontSize = 16.sp
                             )
                             Text(
-                                text = "Rs ${String.format("%.2f", budgetSpent)} / Rs ${String.format("%.2f", budgetTotal)}",
+                                text = "${com.mazhar.finexis.ui.utils.CurrencyHelper.format(budgetSpent, currency, showDecimal = true)} / ${com.mazhar.finexis.ui.utils.CurrencyHelper.format(budgetTotal, currency, showDecimal = true)}",
                                 color = MaterialTheme.colorScheme.secondary,
                                 fontSize = 13.sp
                             )
@@ -481,7 +553,7 @@ fun HomeScreenContent(
         ) {
             expenses.forEachIndexed { index, expense ->
                 StaggeredItem(index = index + 5) {
-                    TransactionRow(expense = expense)
+                    TransactionRow(expense = expense, currency = currency)
                 }
             }
         }
@@ -490,7 +562,7 @@ fun HomeScreenContent(
 
 @SuppressLint("DefaultLocale")
 @Composable
-fun TransactionRow(expense: Expense) {
+fun TransactionRow(expense: Expense, currency: String) {
     val sdf = remember { SimpleDateFormat("MM/dd/yyyy", Locale.US) }
     val dateStr = sdf.format(Date(expense.date))
 
@@ -557,7 +629,7 @@ fun TransactionRow(expense: Expense) {
 
             Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    text = if (expense.isIncome) "+Rs ${String.format("%.2f", expense.amount)}" else "-Rs ${String.format("%.2f", expense.amount)}",
+                    text = com.mazhar.finexis.ui.utils.CurrencyHelper.formatSigned(expense.amount, currency, expense.isIncome, showDecimal = true),
                     fontWeight = FontWeight.Bold,
                     color = if (expense.isIncome) FinexisIncome else FinexisExpense,
                     fontSize = 15.sp
@@ -587,7 +659,8 @@ fun HomeScreenLightPreview() {
                 Expense(id = "1", amount = 1390.0, category = "Transport", paymentMethod = "Card", description = "Commute", isIncome = false),
                 Expense(id = "2", amount = 27800.0, category = "Salary", paymentMethod = "Cash", description = "Salary Payout", isIncome = true),
                 Expense(id = "3", amount = 50.0, category = "Food", paymentMethod = "Cash", description = "Coffee", isIncome = false)
-            )
+            ),
+            currency = "PKR"
         )
     }
 }
@@ -607,7 +680,8 @@ fun HomeScreenDarkPreview() {
                 Expense(id = "1", amount = 1390.0, category = "Transport", paymentMethod = "Card", description = "Commute", isIncome = false),
                 Expense(id = "2", amount = 27800.0, category = "Salary", paymentMethod = "Cash", description = "Salary Payout", isIncome = true),
                 Expense(id = "3", amount = 50.0, category = "Food", paymentMethod = "Cash", description = "Coffee", isIncome = false)
-            )
+            ),
+            currency = "USD"
         )
     }
 }

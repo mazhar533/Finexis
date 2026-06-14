@@ -11,6 +11,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -49,6 +50,7 @@ fun ProfileScreen(
     val currency by preferenceViewModel.currency.collectAsState()
 
     var showAccountInfo by remember { mutableStateOf(false) }
+    var showCurrencyDialog by remember { mutableStateOf(false) }
 
     // Check verification status periodically when ProfileScreen starts
     LaunchedEffect(Unit) {
@@ -65,10 +67,7 @@ fun ProfileScreen(
         currency = currency,
         onThemeToggle = { preferenceViewModel.toggleTheme() },
         onBiometricToggle = { preferenceViewModel.toggleBiometric() },
-        onCurrencyToggle = {
-            val nextCurrency = if (currency == "PKR") "USD" else "PKR"
-            preferenceViewModel.setCurrency(nextCurrency)
-        },
+        onCurrencyToggle = { showCurrencyDialog = true },
         onLogout = {
             authViewModel.logout()
             onLogoutSuccess()
@@ -83,6 +82,69 @@ fun ProfileScreen(
             userEmail = emailToDisplay,
             isDark = isDarkMode,
             onDismiss = { showAccountInfo = false }
+        )
+    }
+
+    if (showCurrencyDialog) {
+        AlertDialog(
+            onDismissRequest = { showCurrencyDialog = false },
+            title = {
+                Text(
+                    text = "Select Default Currency",
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+            },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    val currencies = listOf(
+                        "PKR" to "Pakistani Rupee (PKR)",
+                        "USD" to "US Dollar (USD)",
+                        "EUR" to "Euro (EUR)",
+                        "GBP" to "British Pound (GBP)",
+                        "INR" to "Indian Rupee (INR)",
+                        "SAR" to "Saudi Riyal (SAR)",
+                        "AED" to "UAE Dirham (AED)"
+                    )
+                    currencies.forEach { (code, name) ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    preferenceViewModel.setCurrency(code)
+                                    showCurrencyDialog = false
+                                }
+                                .padding(vertical = 12.dp, horizontal = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = name,
+                                fontSize = 15.sp,
+                                color = if (currency == code) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground,
+                                fontWeight = if (currency == code) FontWeight.Bold else FontWeight.Normal
+                            )
+                            if (currency == code) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = "Selected",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showCurrencyDialog = false }) {
+                    Text("Cancel", color = MaterialTheme.colorScheme.secondary)
+                }
+            },
+            containerColor = MaterialTheme.colorScheme.background
         )
     }
 }
@@ -222,7 +284,16 @@ fun ProfileScreenContent(
                     ProfileSettingRow(
                         iconResId = R.drawable.icon_card,
                         title = "Default Currency",
-                        subtitle = if (currency == "PKR") "Pakistani Rupee (PKR)" else "US Dollar (USD)",
+                        subtitle = when (currency) {
+                            "PKR" -> "Pakistani Rupee (PKR)"
+                            "USD" -> "US Dollar (USD)"
+                            "EUR" -> "Euro (EUR)"
+                            "GBP" -> "British Pound (GBP)"
+                            "INR" -> "Indian Rupee (INR)"
+                            "SAR" -> "Saudi Riyal (SAR)"
+                            "AED" -> "UAE Dirham (AED)"
+                            else -> currency
+                        },
                         action = {
                             Box(
                                 modifier = Modifier
@@ -232,7 +303,7 @@ fun ProfileScreenContent(
                                     .padding(horizontal = 12.dp, vertical = 6.dp)
                             ) {
                                 Text(
-                                    text = if (currency == "PKR") "Switch to USD" else "Switch to PKR",
+                                    text = "Change",
                                     color = MaterialTheme.colorScheme.primary,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 12.sp

@@ -39,6 +39,7 @@ import java.util.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExpenseDialog(
+    currency: String,
     onDismiss: () -> Unit,
     onConfirm: (amount: Double, category: String, date: Long, paymentMethod: String, description: String, isIncome: Boolean) -> Unit,
     expenseToEdit: Expense? = null
@@ -48,7 +49,19 @@ fun ExpenseDialog(
 
     // Form States
     var isIncome by remember { mutableStateOf(expenseToEdit?.isIncome ?: false) }
-    var amount by remember { mutableStateOf(expenseToEdit?.amount?.toString() ?: "") }
+    val initialAmount = remember(expenseToEdit, currency) {
+        if (expenseToEdit != null) {
+            val converted = com.mazhar.finexis.ui.utils.CurrencyHelper.convertPkrToActive(expenseToEdit.amount, currency)
+            if (converted % 1.0 == 0.0) {
+                converted.toInt().toString()
+            } else {
+                String.format(Locale.US, "%.2f", converted)
+            }
+        } else {
+            ""
+        }
+    }
+    var amount by remember { mutableStateOf(initialAmount) }
     
     // Default categories based on mode
     var category by remember(isIncome) {
@@ -218,7 +231,7 @@ fun ExpenseDialog(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    text = "$",
+                    text = com.mazhar.finexis.ui.utils.CurrencyHelper.getSymbol(currency).trim(),
                     fontSize = 32.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.7f),
@@ -524,6 +537,7 @@ fun TransactionBottomSheetLightPreview() {
                 .padding(24.dp)
         ) {
             ExpenseDialog(
+                currency = "PKR",
                 onDismiss = {},
                 onConfirm = { _, _, _, _, _, _ -> }
             )
