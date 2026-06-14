@@ -4,7 +4,7 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import androidx.activity.ComponentActivity
+import androidx.fragment.app.FragmentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
@@ -27,7 +27,7 @@ import com.mazhar.finexis.viewmodel.PreferenceViewModel
 import java.util.Calendar
 import java.util.concurrent.TimeUnit
 
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
     private val authViewModel: AuthViewModel by viewModels()
     private val preferenceViewModel: PreferenceViewModel by viewModels()
 

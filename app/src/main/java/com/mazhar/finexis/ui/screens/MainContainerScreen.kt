@@ -26,12 +26,19 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mazhar.finexis.viewmodel.ExpenseViewModel
 import com.mazhar.finexis.viewmodel.BudgetViewModel
 import com.mazhar.finexis.viewmodel.PreferenceViewModel
+import com.mazhar.finexis.viewmodel.AuthViewModel
 import com.mazhar.finexis.ui.components.ExpenseDialog
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import kotlinx.coroutines.launch
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.scaleIn
+import android.widget.Toast
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.compose.ui.text.style.TextAlign
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.Lifecycle
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
@@ -53,7 +60,8 @@ fun MainContainerScreen(
     modifier: Modifier = Modifier,
     expenseViewModel: ExpenseViewModel = viewModel(),
     budgetViewModel: BudgetViewModel = viewModel(),
-    preferenceViewModel: PreferenceViewModel = viewModel()
+    preferenceViewModel: PreferenceViewModel = viewModel(),
+    authViewModel: AuthViewModel = viewModel()
 ) {
     val pagerState = rememberPagerState(pageCount = { 5 })
     val coroutineScope = rememberCoroutineScope()
@@ -63,6 +71,51 @@ fun MainContainerScreen(
     val budgetState by budgetViewModel.budget.collectAsState()
     val currency by preferenceViewModel.currency.collectAsState()
     val context = LocalContext.current
+
+    val isBiometricEnabled by preferenceViewModel.isBiometricEnabled.collectAsState()
+    var isAppUnlocked by rememberSaveable { mutableStateOf(false) }
+
+    val triggerBiometricUnlock = {
+        val activity = com.mazhar.finexis.ui.utils.BiometricHelper.findActivity(context)
+        if (activity != null) {
+            com.mazhar.finexis.ui.utils.BiometricHelper.showBiometricPrompt(
+                activity = activity,
+                title = "Unlock Finexis",
+                subtitle = "Authenticate using fingerprint or face unlock to access the app",
+                onSuccess = {
+                    isAppUnlocked = true
+                },
+                onError = { err ->
+                    Toast.makeText(context, "Unlock failed: $err", Toast.LENGTH_SHORT).show()
+                }
+            )
+        } else {
+            isAppUnlocked = true
+        }
+    }
+
+    val shouldLock = isBiometricEnabled && !isAppUnlocked
+
+    LaunchedEffect(shouldLock) {
+        if (shouldLock) {
+            triggerBiometricUnlock()
+        }
+    }
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner, isBiometricEnabled) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_START) {
+                if (isBiometricEnabled) {
+                    isAppUnlocked = false
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     // Keep track of already warned limits in memory for this session
     // to avoid multiple duplicate alerts on recompositions.
@@ -197,6 +250,7 @@ fun MainContainerScreen(
                     0 -> HomeScreen(
                         viewModel = expenseViewModel,
                         budgetViewModel = budgetViewModel,
+                        authViewModel = authViewModel,
                         currency = currency,
                         onCurrencyChange = { newCurrency ->
                             preferenceViewModel.setCurrency(newCurrency)
@@ -210,7 +264,7 @@ fun MainContainerScreen(
                     1 -> HistoryScreen(viewModel = expenseViewModel, currency = currency)
                     2 -> AnalyticsScreen(viewModel = expenseViewModel, currency = currency)
                     3 -> BudgetScreen(viewModel = expenseViewModel, budgetViewModel = budgetViewModel, currency = currency)
-                    4 -> ProfileScreen(onLogoutSuccess = onLogoutSuccess, preferenceViewModel = preferenceViewModel)
+                    4 -> ProfileScreen(onLogoutSuccess = onLogoutSuccess, preferenceViewModel = preferenceViewModel, authViewModel = authViewModel)
                 }
             }
         }
@@ -232,6 +286,95 @@ fun MainContainerScreen(
                     showExpenseDialog = false
                 }
             )
+        }
+
+        if (shouldLock) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) {
+                        // Consume clicks to lock underlying screens
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                    modifier = Modifier.padding(24.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(80.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
+                            .clickable { triggerBiometricUnlock() },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.icon_biomatric),
+                            contentDescription = "Unlock app icon",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(40.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Text(
+                        text = "Finexis is Locked",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = "Authenticate using fingerprint or face unlock to access your account",
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.secondary,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(horizontal = 24.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(40.dp))
+
+                    Button(
+                        onClick = { triggerBiometricUnlock() },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .fillMaxWidth(0.7f)
+                            .height(48.dp)
+                    ) {
+                        Text(
+                            text = "Unlock",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    TextButton(
+                        onClick = {
+                            val activity = com.mazhar.finexis.ui.utils.BiometricHelper.findActivity(context)
+                            activity?.finish()
+                        }
+                    ) {
+                        Text(
+                            text = "Exit App",
+                            color = MaterialTheme.colorScheme.secondary,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -349,13 +492,15 @@ fun MainContainerScreenLightPreview() {
     val mockExpenseViewModel = remember { ExpenseViewModel() }
     val mockBudgetViewModel = remember { BudgetViewModel() }
     val mockPreferenceViewModel = remember { PreferenceViewModel(android.app.Application()) }
+    val mockAuthViewModel = remember { AuthViewModel() }
 
     FinexisTheme(darkTheme = false) {
         MainContainerScreen(
             onLogoutSuccess = {},
             expenseViewModel = mockExpenseViewModel,
             budgetViewModel = mockBudgetViewModel,
-            preferenceViewModel = mockPreferenceViewModel
+            preferenceViewModel = mockPreferenceViewModel,
+            authViewModel = mockAuthViewModel
         )
     }
 }
@@ -366,13 +511,15 @@ fun MainContainerScreenDarkPreview() {
     val mockExpenseViewModel = remember { ExpenseViewModel() }
     val mockBudgetViewModel = remember { BudgetViewModel() }
     val mockPreferenceViewModel = remember { PreferenceViewModel(android.app.Application()) }
+    val mockAuthViewModel = remember { AuthViewModel() }
 
     FinexisTheme(darkTheme = true) {
         MainContainerScreen(
             onLogoutSuccess = {},
             expenseViewModel = mockExpenseViewModel,
             budgetViewModel = mockBudgetViewModel,
-            preferenceViewModel = mockPreferenceViewModel
+            preferenceViewModel = mockPreferenceViewModel,
+            authViewModel = mockAuthViewModel
         )
     }
 }

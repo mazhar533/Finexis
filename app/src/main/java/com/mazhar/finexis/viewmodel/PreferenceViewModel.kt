@@ -48,6 +48,34 @@ class PreferenceViewModel(application: Application) : AndroidViewModel(applicati
         val newValue = !_isBiometricEnabled.value
         _isBiometricEnabled.value = newValue
         sharedPrefs?.edit()?.putBoolean("biometric_enabled", newValue)?.apply()
+        if (!newValue) {
+            clearCachedCredentials()
+        }
+    }
+
+    fun saveCachedCredentials(email: String, pass: String) {
+        sharedPrefs?.edit()?.apply {
+            putString("cached_email", email)
+            putString("cached_pass", pass)
+            apply()
+        }
+    }
+
+    fun getCachedCredentials(): Pair<String, String>? {
+        val email = sharedPrefs?.getString("cached_email", null)
+        val pass = sharedPrefs?.getString("cached_pass", null)
+        if (email != null && pass != null) {
+            return Pair(email, pass)
+        }
+        return null
+    }
+
+    fun clearCachedCredentials() {
+        sharedPrefs?.edit()?.apply {
+            remove("cached_email")
+            remove("cached_pass")
+            apply()
+        }
     }
 
     fun completeOnboarding() {

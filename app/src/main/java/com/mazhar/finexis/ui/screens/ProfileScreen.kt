@@ -71,7 +71,21 @@ fun ProfileScreen(
         isBiometricEnabled = isBiometricEnabled,
         currency = currency,
         onThemeToggle = { preferenceViewModel.toggleTheme() },
-        onBiometricToggle = { preferenceViewModel.toggleBiometric() },
+        onBiometricToggle = {
+            if (!isBiometricEnabled) {
+                if (com.mazhar.finexis.ui.utils.BiometricHelper.isBiometricSupported(context)) {
+                    preferenceViewModel.toggleBiometric()
+                } else {
+                    android.widget.Toast.makeText(
+                        context,
+                        "Biometric authentication is not supported or set up on this device.",
+                        android.widget.Toast.LENGTH_LONG
+                    ).show()
+                }
+            } else {
+                preferenceViewModel.toggleBiometric()
+            }
+        },
         onCurrencyToggle = { showCurrencyDialog = true },
         onLogout = {
             authViewModel.logout()

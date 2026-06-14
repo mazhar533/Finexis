@@ -67,20 +67,62 @@ fun LoginScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
     val isDarkMode by preferenceViewModel.isDarkMode.collectAsState()
+    val isBiometricEnabled by preferenceViewModel.isBiometricEnabled.collectAsState()
     val context = LocalContext.current
 
     LoginScreenContent(
         isLoading = isLoading,
         errorMessage = errorMessage,
         isDarkMode = isDarkMode,
+        isBiometricEnabled = isBiometricEnabled,
         onLoginClick = { email, password ->
-            viewModel.login(email, password, onLoginSuccess)
+            viewModel.login(email, password) {
+                if (isBiometricEnabled) {
+                    preferenceViewModel.saveCachedCredentials(email, password)
+                }
+                onLoginSuccess()
+            }
         },
         onForgotPasswordClick = { email, callback ->
             viewModel.sendPasswordResetEmail(email, callback)
         },
         onNavigateToSignup = onNavigateToSignup,
         clearError = { viewModel.clearError() },
+        onBiometricClick = {
+            if (!isBiometricEnabled) {
+                Toast.makeText(
+                    context,
+                    "Please enable Biometric Login in Profile Settings first.",
+                    Toast.LENGTH_LONG
+                ).show()
+            } else {
+                val credentials = preferenceViewModel.getCachedCredentials()
+                if (credentials == null) {
+                    Toast.makeText(
+                        context,
+                        "Please sign in manually with email and password once to configure biometric credentials.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                } else {
+                    val activity = com.mazhar.finexis.ui.utils.BiometricHelper.findActivity(context)
+                    if (activity == null) {
+                        Toast.makeText(context, "Could not launch biometric prompt: host activity not found.", Toast.LENGTH_LONG).show()
+                    } else {
+                        com.mazhar.finexis.ui.utils.BiometricHelper.showBiometricPrompt(
+                            activity = activity,
+                            onSuccess = {
+                                viewModel.login(credentials.first, credentials.second) {
+                                    onLoginSuccess()
+                                }
+                            },
+                            onError = { err ->
+                                Toast.makeText(context, "Authentication failed: $err", Toast.LENGTH_SHORT).show()
+                            }
+                        )
+                    }
+                }
+            }
+        },
         modifier = modifier
     )
 }
@@ -91,10 +133,12 @@ fun LoginScreenContent(
     isLoading: Boolean,
     errorMessage: String?,
     isDarkMode: Boolean,
+    isBiometricEnabled: Boolean,
     onLoginClick: (String, String) -> Unit,
     onForgotPasswordClick: (String, (Boolean, String) -> Unit) -> Unit,
     onNavigateToSignup: () -> Unit,
     clearError: () -> Unit,
+    onBiometricClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var email by remember { mutableStateOf("") }
@@ -221,64 +265,65 @@ fun LoginScreenContent(
             )
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
+        if (isBiometricEnabled) {
+            Spacer(modifier = Modifier.height(32.dp))
 
-        // Divider
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            HorizontalDivider(
-                modifier = Modifier.weight(1f),
-                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-            )
-            Text(
-                text = "OR",
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.7f),
-                modifier = Modifier.padding(horizontal = 16.dp)
-            )
-            HorizontalDivider(
-                modifier = Modifier.weight(1f),
-                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-            )
-        }
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        // Biometric Button Section
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(64.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surface)
-                    .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
-                    .clickable {
-                        Toast.makeText(context, "Biometric login simulated", Toast.LENGTH_SHORT).show()
-                        onLoginClick("biometric@finexis.com", "biometric_pass")
-                    },
-                contentAlignment = Alignment.Center
+            // Divider
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.icon_biomatric),
-                    contentDescription = "Biometric Login",
-                    modifier = Modifier.size(32.dp)
+                HorizontalDivider(
+                    modifier = Modifier.weight(1f),
+                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+                )
+                Text(
+                    text = "OR",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.7f),
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+                HorizontalDivider(
+                    modifier = Modifier.weight(1f),
+                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
                 )
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
-            Text(
-                text = "Biometric Login",
-                color = MaterialTheme.colorScheme.secondary,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium
-            )
+            // Biometric Button Section
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(64.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.surface)
+                        .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
+                        .clickable {
+                            onBiometricClick()
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.icon_biomatric),
+                        contentDescription = "Biometric Login",
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text(
+                    text = "Biometric Login",
+                    color = MaterialTheme.colorScheme.secondary,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            }
         }
 
         Spacer(modifier = Modifier.weight(1f))
@@ -312,10 +357,12 @@ fun LoginScreenPreview() {
             isLoading = false,
             errorMessage = null,
             isDarkMode = false,
+            isBiometricEnabled = true,
             onLoginClick = { _, _ -> },
             onForgotPasswordClick = { _, _ -> },
             onNavigateToSignup = {},
-            clearError = {}
+            clearError = {},
+            onBiometricClick = {}
         )
     }
 }

@@ -107,7 +107,8 @@ fun FinexisNavGraph(
                     }
                 },
                 modifier = Modifier.statusBarsPadding().navigationBarsPadding(),
-                viewModel = authViewModel
+                viewModel = authViewModel,
+                preferenceViewModel = preferenceViewModel
             )
         }
         
@@ -118,7 +119,8 @@ fun FinexisNavGraph(
                         popUpTo(Screen.Main.route) { inclusive = true }
                     }
                 },
-                preferenceViewModel = preferenceViewModel
+                preferenceViewModel = preferenceViewModel,
+                authViewModel = authViewModel
             )
         }
     }

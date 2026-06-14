@@ -30,6 +30,7 @@ import com.mazhar.finexis.ui.theme.*
 import com.mazhar.finexis.model.Expense
 import com.mazhar.finexis.viewmodel.ExpenseViewModel
 import com.mazhar.finexis.viewmodel.BudgetViewModel
+import com.mazhar.finexis.viewmodel.AuthViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mazhar.finexis.ui.components.FadeInSlideUp
 import com.mazhar.finexis.ui.components.StaggeredItem
@@ -48,12 +49,14 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     viewModel: ExpenseViewModel = viewModel(),
     budgetViewModel: BudgetViewModel = viewModel(),
+    authViewModel: AuthViewModel = viewModel(),
     currency: String = "PKR",
     onCurrencyChange: (String) -> Unit = {},
     onNavigateToSettings: () -> Unit = {}
 ) {
     val expenses by viewModel.expenses.collectAsState()
     val budgetState by budgetViewModel.budget.collectAsState()
+    val displayName by authViewModel.displayName.collectAsState()
     val context = LocalContext.current
 
     var unreadCount by remember { mutableStateOf(0) }
@@ -64,7 +67,7 @@ fun HomeScreen(
         unreadCount = NotificationHelper.getNotifications(context).count { !it.isRead }
     }
 
-    val userName = "Mazharalihaider4"
+    val userName = displayName
     val incomeAmount = expenses.filter { it.isIncome }.sumOf { it.amount }
     val expenseAmount = expenses.filter { !it.isIncome }.sumOf { it.amount }
     val totalBalance = incomeAmount - expenseAmount

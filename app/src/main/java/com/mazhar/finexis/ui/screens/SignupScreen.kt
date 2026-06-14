@@ -50,22 +50,30 @@ import com.mazhar.finexis.ui.components.FinexisTextField
 import com.mazhar.finexis.ui.theme.FinexisPrimary
 import com.mazhar.finexis.ui.theme.FinexisTheme
 import com.mazhar.finexis.viewmodel.AuthViewModel
+import com.mazhar.finexis.viewmodel.PreferenceViewModel
 
 @Composable
 fun SignupScreen(
     onSignupSuccess: () -> Unit,
     onNavigateToLogin: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: AuthViewModel = viewModel()
+    viewModel: AuthViewModel = viewModel(),
+    preferenceViewModel: PreferenceViewModel = viewModel()
 ) {
     val isLoading by viewModel.isLoading.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
+    val isBiometricEnabled by preferenceViewModel.isBiometricEnabled.collectAsState()
 
     SignupScreenContent(
         isLoading = isLoading,
         errorMessage = errorMessage,
-        onSignupClick = { email, password ->
-            viewModel.signUp(email, password, onSignupSuccess)
+        onSignupClick = { name, email, password ->
+            viewModel.signUp(email, password, name) {
+                if (isBiometricEnabled) {
+                    preferenceViewModel.saveCachedCredentials(email, password)
+                }
+                onSignupSuccess()
+            }
         },
         onNavigateToLogin = onNavigateToLogin,
         clearError = { viewModel.clearError() },
@@ -77,11 +85,12 @@ fun SignupScreen(
 fun SignupScreenContent(
     isLoading: Boolean,
     errorMessage: String?,
-    onSignupClick: (String, String) -> Unit,
+    onSignupClick: (String, String, String) -> Unit,
     onNavigateToLogin: () -> Unit,
     clearError: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
 
@@ -142,6 +151,17 @@ fun SignupScreenContent(
 
         // Form Fields
         FinexisTextField(
+            value = name,
+            onValueChange = { name = it },
+            label = "Full Name",
+            placeholder = "Enter your full name",
+            keyboardType = KeyboardType.Text,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        FinexisTextField(
             value = email,
             onValueChange = { email = it },
             label = "Email Address",
@@ -175,69 +195,9 @@ fun SignupScreenContent(
         } else {
             FinexisButton(
                 text = "Sign Up",
-                onClick = { onSignupClick(email, password) },
+                onClick = { onSignupClick(name, email, password) },
                 showArrow = true,
-                enabled = email.isNotEmpty() && password.isNotEmpty()
-            )
-        }
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        // Divider
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            HorizontalDivider(
-                modifier = Modifier.weight(1f),
-                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-            )
-            Text(
-                text = "OR",
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.7f),
-                modifier = Modifier.padding(horizontal = 16.dp)
-            )
-            HorizontalDivider(
-                modifier = Modifier.weight(1f),
-                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-            )
-        }
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        // Biometric Button Section
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(64.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surface)
-                    .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
-                    .clickable {
-                        Toast.makeText(context, "Biometric login simulated", Toast.LENGTH_SHORT).show()
-                        onSignupClick("biometric@finexis.com", "biometric_pass")
-                    },
-                contentAlignment = Alignment.Center
-            ) {
-                Image(
-                    painter = painterResource(id = R.drawable.icon_biomatric),
-                    contentDescription = "Biometric Login",
-                    modifier = Modifier.size(32.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Text(
-                text = "Biometric Login",
-                color = MaterialTheme.colorScheme.secondary,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium
+                enabled = name.isNotEmpty() && email.isNotEmpty() && password.isNotEmpty()
             )
         }
 
@@ -271,7 +231,7 @@ fun SignupScreenPreview() {
         SignupScreenContent(
             isLoading = false,
             errorMessage = null,
-            onSignupClick = { _, _ -> },
+            onSignupClick = { _, _, _ -> },
             onNavigateToLogin = {},
             clearError = {}
         )

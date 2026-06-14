@@ -84,9 +84,9 @@ class AuthViewModel : ViewModel() {
         }
     }
 
-    fun signUp(email: String, password: String, onSuccess: () -> Unit) {
-        if (email.isBlank() || password.isBlank()) {
-            _errorMessage.value = "Email and Password cannot be empty"
+    fun signUp(email: String, password: String, displayName: String, onSuccess: () -> Unit) {
+        if (email.isBlank() || password.isBlank() || displayName.isBlank()) {
+            _errorMessage.value = "Name, Email and Password cannot be empty"
             return
         }
 
@@ -98,20 +98,30 @@ class AuthViewModel : ViewModel() {
                 delay(1000)
                 _isLoading.value = false
                 _currentUser.value = email
-                _displayName.value = extractDisplayName(email)
+                _displayName.value = displayName
                 onSuccess()
             }
         } else {
             auth?.createUserWithEmailAndPassword(email, password)
                 ?.addOnCompleteListener { task ->
-                    _isLoading.value = false
                     if (task.isSuccessful) {
                         val user = auth?.currentUser
-                        _currentUser.value = user?.email
-                        _isEmailVerified.value = user?.isEmailVerified ?: false
-                        _displayName.value = user?.displayName ?: extractDisplayName(user?.email)
-                        onSuccess()
+                        val profileUpdates = com.google.firebase.auth.UserProfileChangeRequest.Builder()
+                            .setDisplayName(displayName)
+                            .build()
+                        user?.updateProfile(profileUpdates)?.addOnCompleteListener { updateTask ->
+                            _isLoading.value = false
+                            if (updateTask.isSuccessful) {
+                                _displayName.value = displayName
+                            } else {
+                                _displayName.value = user.displayName ?: displayName
+                            }
+                            _currentUser.value = user.email
+                            _isEmailVerified.value = user.isEmailVerified
+                            onSuccess()
+                        }
                     } else {
+                        _isLoading.value = false
                         _errorMessage.value = task.exception?.localizedMessage ?: "Signup failed"
                     }
                 }
