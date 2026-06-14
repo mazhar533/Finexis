@@ -89,7 +89,8 @@ fun FinexisNavGraph(
                     navController.navigate(Screen.Signup.route)
                 },
                 modifier = Modifier.statusBarsPadding().navigationBarsPadding(),
-                viewModel = authViewModel
+                viewModel = authViewModel,
+                preferenceViewModel = preferenceViewModel
             )
         }
         

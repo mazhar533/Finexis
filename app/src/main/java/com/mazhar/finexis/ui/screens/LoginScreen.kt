@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -50,22 +51,33 @@ import com.mazhar.finexis.ui.components.FinexisTextField
 import com.mazhar.finexis.ui.theme.FinexisPrimary
 import com.mazhar.finexis.ui.theme.FinexisTheme
 import com.mazhar.finexis.viewmodel.AuthViewModel
+import com.mazhar.finexis.viewmodel.PreferenceViewModel
+import com.mazhar.finexis.ui.components.ForgotPasswordBottomSheet
 
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
     onLoginSuccess: () -> Unit,
     onNavigateToSignup: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: AuthViewModel = viewModel()
+    viewModel: AuthViewModel = viewModel(),
+    preferenceViewModel: PreferenceViewModel = viewModel()
 ) {
     val isLoading by viewModel.isLoading.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
+    val isDarkMode by preferenceViewModel.isDarkMode.collectAsState()
+    val context = LocalContext.current
 
     LoginScreenContent(
         isLoading = isLoading,
         errorMessage = errorMessage,
+        isDarkMode = isDarkMode,
         onLoginClick = { email, password ->
             viewModel.login(email, password, onLoginSuccess)
+        },
+        onForgotPasswordClick = { email, callback ->
+            viewModel.sendPasswordResetEmail(email, callback)
         },
         onNavigateToSignup = onNavigateToSignup,
         clearError = { viewModel.clearError() },
@@ -73,17 +85,21 @@ fun LoginScreen(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreenContent(
     isLoading: Boolean,
     errorMessage: String?,
+    isDarkMode: Boolean,
     onLoginClick: (String, String) -> Unit,
+    onForgotPasswordClick: (String, (Boolean, String) -> Unit) -> Unit,
     onNavigateToSignup: () -> Unit,
     clearError: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var showForgotPasswordSheet by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
 
@@ -92,6 +108,15 @@ fun LoginScreenContent(
             Toast.makeText(context, it, Toast.LENGTH_LONG).show()
             clearError()
         }
+    }
+
+    if (showForgotPasswordSheet) {
+        ForgotPasswordBottomSheet(
+            initialEmail = email,
+            isDark = isDarkMode,
+            onDismiss = { showForgotPasswordSheet = false },
+            onSendResetLink = onForgotPasswordClick
+        )
     }
 
     Column(
@@ -159,7 +184,25 @@ fun LoginScreenContent(
             isPassword = true
         )
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(10.dp))
+
+        // Forgot Password clickable link
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.CenterEnd
+        ) {
+            Text(
+                text = "Forgot Password?",
+                color = FinexisPrimary,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.clickable {
+                    showForgotPasswordSheet = true
+                }
+            )
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
 
         // Action Button or Loading Indicator
         if (isLoading) {
@@ -268,7 +311,9 @@ fun LoginScreenPreview() {
         LoginScreenContent(
             isLoading = false,
             errorMessage = null,
+            isDarkMode = false,
             onLoginClick = { _, _ -> },
+            onForgotPasswordClick = { _, _ -> },
             onNavigateToSignup = {},
             clearError = {}
         )

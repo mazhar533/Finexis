@@ -36,6 +36,11 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.ui.platform.LocalContext
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 data class NavigationItem(
     val label: String,
@@ -53,6 +58,96 @@ fun MainContainerScreen(
     val pagerState = rememberPagerState(pageCount = { 5 })
     val coroutineScope = rememberCoroutineScope()
     var showExpenseDialog by remember { mutableStateOf(false) }
+
+    val expenses by expenseViewModel.expenses.collectAsState()
+    val budgetState by budgetViewModel.budget.collectAsState()
+    val context = LocalContext.current
+
+    // Keep track of already warned limits in memory for this session
+    // to avoid multiple duplicate alerts on recompositions.
+    var lastWarnedMonth by remember { mutableStateOf("") }
+    var lastWarnedCategories by remember { mutableStateOf(setOf<String>()) }
+
+    LaunchedEffect(expenses, budgetState) {
+        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+        val todayStr = sdf.format(Date())
+
+        // Calculate today's spent amount and transaction count
+        // Filter out incomes (only count expenses)
+        val todayCalendar = Calendar.getInstance()
+        val todayExpenses = expenses.filter {
+            if (it.isIncome) return@filter false
+            val cal = Calendar.getInstance().apply { timeInMillis = it.date }
+            cal.get(Calendar.YEAR) == todayCalendar.get(Calendar.YEAR) &&
+                    cal.get(Calendar.DAY_OF_YEAR) == todayCalendar.get(Calendar.DAY_OF_YEAR)
+        }
+        val todaySpent = todayExpenses.sumOf { it.amount }
+        val todayCount = todayExpenses.size
+
+        // Cache the daily spent totals in shared preferences for background worker access
+        com.mazhar.finexis.notification.NotificationHelper.cacheDailySpentData(context, todaySpent, todayCount)
+
+        // --- Budget Limit Alert Calculations ---
+        val monthlyLimit = budgetState.monthlyLimit
+        val totalSpent = expenses.filter { !it.isIncome }.sumOf { it.amount }
+
+        if (monthlyLimit > 0) {
+            val ratio = totalSpent / monthlyLimit
+            val currentMonthStr = SimpleDateFormat("yyyy-MM", Locale.US).format(Date())
+
+            if (ratio >= 1.0 && lastWarnedMonth != "${currentMonthStr}_100") {
+                lastWarnedMonth = "${currentMonthStr}_100"
+                com.mazhar.finexis.notification.NotificationHelper.showBudgetAlert(
+                    context,
+                    "Monthly Budget Exceeded! ⚠️",
+                    "You have exceeded your monthly budget! Total spent: Rs ${String.format("%.2f", totalSpent)} / Rs ${String.format("%.2f", monthlyLimit)}"
+                )
+            } else if (ratio >= 0.9 && ratio < 1.0 && lastWarnedMonth != "${currentMonthStr}_90" && lastWarnedMonth != "${currentMonthStr}_100") {
+                lastWarnedMonth = "${currentMonthStr}_90"
+                com.mazhar.finexis.notification.NotificationHelper.showBudgetAlert(
+                    context,
+                    "Monthly Budget Warning! 🔔",
+                    "You have used 90% of your monthly budget! Total spent: Rs ${String.format("%.2f", totalSpent)}"
+                )
+            }
+        }
+
+        // Check category-wise limits: Food, Transport, Shopping, Other
+        val categories = listOf(
+            Triple("Food", budgetState.foodLimit, expenses.filter { !it.isIncome && it.category.equals("Food", ignoreCase = true) }.sumOf { it.amount }),
+            Triple("Transport", budgetState.transportLimit, expenses.filter { !it.isIncome && it.category.equals("Transport", ignoreCase = true) }.sumOf { it.amount }),
+            Triple("Shopping", budgetState.shoppingLimit, expenses.filter { !it.isIncome && it.category.equals("Shopping", ignoreCase = true) }.sumOf { it.amount }),
+            Triple("Other", budgetState.otherLimit, expenses.filter { !it.isIncome && it.category.equals("Other", ignoreCase = true) }.sumOf { it.amount })
+        )
+
+        val newWarnedCategories = lastWarnedCategories.toMutableSet()
+        categories.forEach { (name, limit, spent) ->
+            if (limit > 0) {
+                val ratio = spent / limit
+                val key100 = "${name}_100"
+                val key90 = "${name}_90"
+
+                if (ratio >= 1.0 && !lastWarnedCategories.contains(key100)) {
+                    newWarnedCategories.add(key100)
+                    com.mazhar.finexis.notification.NotificationHelper.showBudgetAlert(
+                        context,
+                        "Category Limit Exceeded! ⚠️",
+                        "The $name category budget has been exceeded! Total spent: Rs ${String.format("%.2f", spent)} / Rs ${String.format("%.2f", limit)}"
+                    )
+                } else if (ratio >= 0.9 && ratio < 1.0 && !lastWarnedCategories.contains(key90) && !lastWarnedCategories.contains(key100)) {
+                    newWarnedCategories.add(key90)
+                    com.mazhar.finexis.notification.NotificationHelper.showBudgetAlert(
+                        context,
+                        "Category Limit Warning! 🔔",
+                        "You have used 90% of your $name category budget! Total spent: Rs ${String.format("%.2f", spent)}"
+                    )
+                }
+            }
+        }
+        if (newWarnedCategories != lastWarnedCategories) {
+            lastWarnedCategories = newWarnedCategories
+        }
+    }
 
     Scaffold(
         modifier = modifier.fillMaxSize(),

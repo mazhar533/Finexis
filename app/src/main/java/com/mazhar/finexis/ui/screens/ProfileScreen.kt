@@ -28,7 +28,9 @@ import com.mazhar.finexis.ui.theme.*
 import com.mazhar.finexis.viewmodel.AuthViewModel
 import com.mazhar.finexis.viewmodel.PreferenceViewModel
 import com.mazhar.finexis.ui.components.FadeInSlideUp
+import com.mazhar.finexis.ui.components.AccountInfoBottomSheet
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
     onLogoutSuccess: () -> Unit,
@@ -37,13 +39,27 @@ fun ProfileScreen(
     preferenceViewModel: PreferenceViewModel = viewModel()
 ) {
     val currentUserEmail by authViewModel.currentUser.collectAsState()
-    val userName = currentUserEmail ?: "Mazharalihaider4"
+    val displayNameState by authViewModel.displayName.collectAsState()
+    val isVerified by authViewModel.isEmailVerified.collectAsState()
+    
+    val emailToDisplay = currentUserEmail ?: "mazharalihaider4@gmail.com"
+    
     val isDarkMode by preferenceViewModel.isDarkMode.collectAsState()
     val isBiometricEnabled by preferenceViewModel.isBiometricEnabled.collectAsState()
     val currency by preferenceViewModel.currency.collectAsState()
 
+    var showAccountInfo by remember { mutableStateOf(false) }
+
+    // Check verification status periodically when ProfileScreen starts
+    LaunchedEffect(Unit) {
+        authViewModel.checkEmailVerificationStatus()
+    }
+
     ProfileScreenContent(
-        userName = userName,
+        userName = displayNameState,
+        userEmail = emailToDisplay,
+        isVerified = isVerified,
+        onUserCardClick = { showAccountInfo = true },
         isDarkMode = isDarkMode,
         isBiometricEnabled = isBiometricEnabled,
         currency = currency,
@@ -59,11 +75,24 @@ fun ProfileScreen(
         },
         modifier = modifier
     )
+
+    if (showAccountInfo) {
+        AccountInfoBottomSheet(
+            authViewModel = authViewModel,
+            userName = displayNameState,
+            userEmail = emailToDisplay,
+            isDark = isDarkMode,
+            onDismiss = { showAccountInfo = false }
+        )
+    }
 }
 
 @Composable
 fun ProfileScreenContent(
     userName: String,
+    userEmail: String,
+    isVerified: Boolean,
+    onUserCardClick: () -> Unit,
     isDarkMode: Boolean,
     isBiometricEnabled: Boolean,
     currency: String,
@@ -104,7 +133,9 @@ fun ProfileScreenContent(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 24.dp),
+                    .padding(bottom = 24.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .clickable { onUserCardClick() },
                 shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -131,19 +162,37 @@ fun ProfileScreenContent(
                         )
                     }
                     Spacer(modifier = Modifier.width(16.dp))
-                    Column {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = userName,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            if (isVerified) {
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Icon(
+                                    painter = painterResource(id = R.drawable.icon_verify),
+                                    contentDescription = "Verified User",
+                                    tint = Color(0xFF00A86B),
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = userName,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = "Personal Account",
+                            text = userEmail,
                             fontSize = 14.sp,
                             color = MaterialTheme.colorScheme.secondary
                         )
                     }
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = "Account Details",
+                        tint = MaterialTheme.colorScheme.secondary,
+                        modifier = Modifier.size(24.dp)
+                    )
                 }
             }
         }
@@ -372,6 +421,9 @@ fun ProfileScreenLightPreview() {
     FinexisTheme(darkTheme = false) {
         ProfileScreenContent(
             userName = "Mazharalihaider4",
+            userEmail = "mazharalihaider4@gmail.com",
+            isVerified = true,
+            onUserCardClick = {},
             isDarkMode = false,
             isBiometricEnabled = true,
             currency = "PKR",
@@ -389,6 +441,9 @@ fun ProfileScreenDarkPreview() {
     FinexisTheme(darkTheme = true) {
         ProfileScreenContent(
             userName = "Mazharalihaider4",
+            userEmail = "mazharalihaider4@gmail.com",
+            isVerified = false,
+            onUserCardClick = {},
             isDarkMode = true,
             isBiometricEnabled = false,
             currency = "USD",

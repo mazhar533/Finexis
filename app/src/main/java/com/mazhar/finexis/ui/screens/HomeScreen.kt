@@ -35,7 +35,13 @@ import com.mazhar.finexis.ui.components.FadeInSlideUp
 import com.mazhar.finexis.ui.components.StaggeredItem
 import java.text.SimpleDateFormat
 import java.util.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.ui.platform.LocalContext
+import com.mazhar.finexis.notification.NotificationHelper
+import com.mazhar.finexis.ui.components.NotificationBottomSheet
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
@@ -45,6 +51,14 @@ fun HomeScreen(
 ) {
     val expenses by viewModel.expenses.collectAsState()
     val budgetState by budgetViewModel.budget.collectAsState()
+    val context = LocalContext.current
+
+    var unreadCount by remember { mutableStateOf(0) }
+    var showNotifications by remember { mutableStateOf(false) }
+
+    LaunchedEffect(expenses, budgetState, showNotifications) {
+        unreadCount = NotificationHelper.getNotifications(context).count { !it.isRead }
+    }
 
     val userName = "Mazharalihaider4"
     val incomeAmount = expenses.filter { it.isIncome }.sumOf { it.amount }
@@ -62,9 +76,17 @@ fun HomeScreen(
         budgetSpent = budgetSpent,
         budgetTotal = budgetTotal,
         expenses = expenses.take(5),
+        unreadCount = unreadCount,
+        onNotificationClick = { showNotifications = true },
         modifier = modifier,
         onSettingsClick = onNavigateToSettings
     )
+
+    if (showNotifications) {
+        NotificationBottomSheet(
+            onDismiss = { showNotifications = false }
+        )
+    }
 }
 
 @SuppressLint("DefaultLocale")
@@ -77,6 +99,8 @@ fun HomeScreenContent(
     budgetSpent: Double,
     budgetTotal: Double,
     expenses: List<Expense>,
+    unreadCount: Int = 0,
+    onNotificationClick: () -> Unit = {},
     modifier: Modifier = Modifier,
     onSettingsClick: () -> Unit = {}
 ) {
@@ -121,22 +145,60 @@ fun HomeScreenContent(
                     )
                 }
 
-                // Settings Button in Brand Bar
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.surface)
-                        .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
-                        .clickable { onSettingsClick() },
-                    contentAlignment = Alignment.Center
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.icon_setting),
-                        contentDescription = "Settings",
-                        tint = MaterialTheme.colorScheme.onBackground,
-                        modifier = Modifier.size(18.dp)
-                    )
+                    // Notification Bell Button
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.surface)
+                            .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
+                            .clickable { onNotificationClick() },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Notifications,
+                                contentDescription = "Notifications",
+                                tint = MaterialTheme.colorScheme.onBackground,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            if (unreadCount > 0) {
+                                Box(
+                                    modifier = Modifier
+                                        .padding(top = 8.dp, end = 8.dp)
+                                        .size(8.dp)
+                                        .clip(CircleShape)
+                                        .background(Color.Red)
+                                        .align(Alignment.TopEnd)
+                                )
+                            }
+                        }
+                    }
+
+                    // Settings Button
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.surface)
+                            .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
+                            .clickable { onSettingsClick() },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.icon_setting),
+                            contentDescription = "Settings",
+                            tint = MaterialTheme.colorScheme.onBackground,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
                 }
             }
         }
