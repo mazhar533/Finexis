@@ -29,8 +29,8 @@ object BiometricHelper {
 
     fun showBiometricPrompt(
         activity: FragmentActivity,
-        title: String = "Biometric Login",
-        subtitle: String = "Log in using your biometric credentials",
+        title: String = "Touch ID Login",
+        subtitle: String = "Log in using Touch ID",
         onSuccess: () -> Unit,
         onError: (errString: String) -> Unit = {}
     ) {

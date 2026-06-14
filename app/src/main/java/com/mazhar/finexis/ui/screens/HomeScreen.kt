@@ -178,6 +178,16 @@ fun HomeScreenContent(
     modifier: Modifier = Modifier,
     onSettingsClick: () -> Unit = {}
 ) {
+    val greeting = remember {
+        val hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
+        when (hour) {
+            in 0..11 -> "Good morning,"
+            in 12..16 -> "Good afternoon,"
+            in 17..20 -> "Good evening,"
+            else -> "Good night,"
+        }
+    }
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -303,7 +313,7 @@ fun HomeScreenContent(
                 Spacer(modifier = Modifier.width(12.dp))
                 Column {
                     Text(
-                        text = "Good morning,",
+                        text = greeting,
                         fontSize = 13.sp,
                         color = MaterialTheme.colorScheme.secondary
                     )

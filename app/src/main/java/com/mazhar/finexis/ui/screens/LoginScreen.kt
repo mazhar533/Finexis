@@ -1,6 +1,6 @@
 package com.mazhar.finexis.ui.screens
 
-import android.widget.Toast
+
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -70,53 +70,59 @@ fun LoginScreen(
     val isBiometricEnabled by preferenceViewModel.isBiometricEnabled.collectAsState()
     val context = LocalContext.current
 
+    LaunchedEffect(errorMessage) {
+        errorMessage?.let {
+            preferenceViewModel.showToast(it, true)
+            viewModel.clearError()
+        }
+    }
+
     LoginScreenContent(
         isLoading = isLoading,
-        errorMessage = errorMessage,
         isDarkMode = isDarkMode,
         isBiometricEnabled = isBiometricEnabled,
         onLoginClick = { email, password ->
-            viewModel.login(email, password) {
-                if (isBiometricEnabled) {
-                    preferenceViewModel.saveCachedCredentials(email, password)
+            if (email.isBlank() || password.isBlank()) {
+                preferenceViewModel.showToast("Email and Password cannot be empty", true)
+            } else {
+                viewModel.login(email, password) {
+                    preferenceViewModel.showToast("Welcome back!", false)
+                    if (isBiometricEnabled) {
+                        preferenceViewModel.saveCachedCredentials(email, password)
+                    }
+                    onLoginSuccess()
                 }
-                onLoginSuccess()
             }
         },
         onForgotPasswordClick = { email, callback ->
-            viewModel.sendPasswordResetEmail(email, callback)
+            viewModel.sendPasswordResetEmail(email) { success, msg ->
+                preferenceViewModel.showToast(msg, !success)
+                callback(success, msg)
+            }
         },
         onNavigateToSignup = onNavigateToSignup,
-        clearError = { viewModel.clearError() },
         onBiometricClick = {
             if (!isBiometricEnabled) {
-                Toast.makeText(
-                    context,
-                    "Please enable Biometric Login in Profile Settings first.",
-                    Toast.LENGTH_LONG
-                ).show()
+                preferenceViewModel.showToast("Please enable Touch ID Login in Profile Settings first.", true)
             } else {
                 val credentials = preferenceViewModel.getCachedCredentials()
                 if (credentials == null) {
-                    Toast.makeText(
-                        context,
-                        "Please sign in manually with email and password once to configure biometric credentials.",
-                        Toast.LENGTH_LONG
-                    ).show()
+                    preferenceViewModel.showToast("Please sign in manually with email and password once to configure Touch ID credentials.", true)
                 } else {
                     val activity = com.mazhar.finexis.ui.utils.BiometricHelper.findActivity(context)
                     if (activity == null) {
-                        Toast.makeText(context, "Could not launch biometric prompt: host activity not found.", Toast.LENGTH_LONG).show()
+                        preferenceViewModel.showToast("Could not launch Touch ID prompt: host activity not found.", true)
                     } else {
                         com.mazhar.finexis.ui.utils.BiometricHelper.showBiometricPrompt(
                             activity = activity,
                             onSuccess = {
                                 viewModel.login(credentials.first, credentials.second) {
+                                    preferenceViewModel.showToast("Welcome back!", false)
                                     onLoginSuccess()
                                 }
                             },
                             onError = { err ->
-                                Toast.makeText(context, "Authentication failed: $err", Toast.LENGTH_SHORT).show()
+                                preferenceViewModel.showToast("Authentication failed: $err", true)
                             }
                         )
                     }
@@ -131,13 +137,11 @@ fun LoginScreen(
 @Composable
 fun LoginScreenContent(
     isLoading: Boolean,
-    errorMessage: String?,
     isDarkMode: Boolean,
     isBiometricEnabled: Boolean,
     onLoginClick: (String, String) -> Unit,
     onForgotPasswordClick: (String, (Boolean, String) -> Unit) -> Unit,
     onNavigateToSignup: () -> Unit,
-    clearError: () -> Unit,
     onBiometricClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -146,13 +150,6 @@ fun LoginScreenContent(
     var showForgotPasswordSheet by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
-
-    LaunchedEffect(errorMessage) {
-        errorMessage?.let {
-            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
-            clearError()
-        }
-    }
 
     if (showForgotPasswordSheet) {
         ForgotPasswordBottomSheet(
@@ -261,7 +258,7 @@ fun LoginScreenContent(
                 text = "Sign In",
                 onClick = { onLoginClick(email, password) },
                 showArrow = true,
-                enabled = email.isNotEmpty() && password.isNotEmpty()
+                enabled = true
             )
         }
 
@@ -310,7 +307,7 @@ fun LoginScreenContent(
                 ) {
                     Image(
                         painter = painterResource(id = R.drawable.icon_biomatric),
-                        contentDescription = "Biometric Login",
+                        contentDescription = "Touch ID Login",
                         modifier = Modifier.size(32.dp)
                     )
                 }
@@ -318,7 +315,7 @@ fun LoginScreenContent(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Text(
-                    text = "Biometric Login",
+                    text = "Touch ID Login",
                     color = MaterialTheme.colorScheme.secondary,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium
@@ -355,13 +352,11 @@ fun LoginScreenPreview() {
     FinexisTheme {
         LoginScreenContent(
             isLoading = false,
-            errorMessage = null,
             isDarkMode = false,
             isBiometricEnabled = true,
             onLoginClick = { _, _ -> },
             onForgotPasswordClick = { _, _ -> },
             onNavigateToSignup = {},
-            clearError = {},
             onBiometricClick = {}
         )
     }

@@ -28,6 +28,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.platform.LocalContext
 import com.mazhar.finexis.ui.components.FadeInSlideUp
 import com.mazhar.finexis.ui.components.StaggeredItem
+import com.mazhar.finexis.ui.components.FinexisToast
 import com.mazhar.finexis.model.Expense
 import java.util.Calendar
 import java.text.SimpleDateFormat
@@ -99,28 +100,48 @@ fun AnalyticsScreen(
         ).filter { it.amount > 0 }.sortedByDescending { it.amount }
     }
 
-    AnalyticsScreenContent(
-        totalIncome = totalIncome,
-        totalExpenses = totalExpenses,
-        savings = savings,
-        months = months,
-        monthsAgo = monthsAgo,
-        monthlyValues = monthlyValues,
-        categories = categorySpendings,
-        expenses = expenses,
-        currency = currency,
-        modifier = modifier,
-        onExportPdf = {
-            com.mazhar.finexis.ui.utils.PdfExportHelper.exportTransactionsToPdf(
-                context = context,
-                expenses = expenses,
-                currency = currency,
-                totalIncome = totalIncome,
-                totalExpenses = totalExpenses,
-                savings = savings
-            )
-        }
-    )
+    var toastMessage by remember { mutableStateOf<String?>(null) }
+    var isToastError by remember { mutableStateOf(false) }
+
+    Box(modifier = modifier.fillMaxSize()) {
+        AnalyticsScreenContent(
+            totalIncome = totalIncome,
+            totalExpenses = totalExpenses,
+            savings = savings,
+            months = months,
+            monthsAgo = monthsAgo,
+            monthlyValues = monthlyValues,
+            categories = categorySpendings,
+            expenses = expenses,
+            currency = currency,
+            modifier = Modifier.fillMaxSize(),
+            onExportPdf = {
+                com.mazhar.finexis.ui.utils.PdfExportHelper.exportTransactionsToPdf(
+                    context = context,
+                    expenses = expenses,
+                    currency = currency,
+                    totalIncome = totalIncome,
+                    totalExpenses = totalExpenses,
+                    savings = savings,
+                    onSuccess = {
+                        toastMessage = "PDF statement exported successfully!"
+                        isToastError = false
+                    },
+                    onError = { err ->
+                        toastMessage = err
+                        isToastError = true
+                    }
+                )
+            }
+        )
+
+        FinexisToast(
+            message = toastMessage ?: "",
+            visible = toastMessage != null,
+            isError = isToastError,
+            onDismiss = { toastMessage = null }
+        )
+    }
 }
 
 @Composable

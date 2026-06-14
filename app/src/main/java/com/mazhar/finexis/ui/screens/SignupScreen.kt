@@ -1,13 +1,10 @@
 package com.mazhar.finexis.ui.screens
 
-import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,11 +12,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -64,30 +59,38 @@ fun SignupScreen(
     val errorMessage by viewModel.errorMessage.collectAsState()
     val isBiometricEnabled by preferenceViewModel.isBiometricEnabled.collectAsState()
 
+    LaunchedEffect(errorMessage) {
+        errorMessage?.let {
+            preferenceViewModel.showToast(it, true)
+            viewModel.clearError()
+        }
+    }
+
     SignupScreenContent(
         isLoading = isLoading,
-        errorMessage = errorMessage,
         onSignupClick = { name, email, password ->
-            viewModel.signUp(email, password, name) {
-                if (isBiometricEnabled) {
-                    preferenceViewModel.saveCachedCredentials(email, password)
+            if (name.isBlank() || email.isBlank() || password.isBlank()) {
+                preferenceViewModel.showToast("Name, Email and Password cannot be empty", true)
+            } else {
+                viewModel.signUp(email, password, name) {
+                    preferenceViewModel.showToast("Account created successfully!", false)
+                    if (isBiometricEnabled) {
+                        preferenceViewModel.saveCachedCredentials(email, password)
+                    }
+                    onSignupSuccess()
                 }
-                onSignupSuccess()
             }
         },
         onNavigateToLogin = onNavigateToLogin,
-        clearError = { viewModel.clearError() },
-        modifier = modifier
+        modifier = modifier.fillMaxSize()
     )
 }
 
 @Composable
 fun SignupScreenContent(
     isLoading: Boolean,
-    errorMessage: String?,
     onSignupClick: (String, String, String) -> Unit,
     onNavigateToLogin: () -> Unit,
-    clearError: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var name by remember { mutableStateOf("") }
@@ -95,13 +98,6 @@ fun SignupScreenContent(
     var password by remember { mutableStateOf("") }
 
     val context = LocalContext.current
-
-    LaunchedEffect(errorMessage) {
-        errorMessage?.let {
-            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
-            clearError()
-        }
-    }
 
     Column(
         modifier = modifier
@@ -197,7 +193,7 @@ fun SignupScreenContent(
                 text = "Sign Up",
                 onClick = { onSignupClick(name, email, password) },
                 showArrow = true,
-                enabled = name.isNotEmpty() && email.isNotEmpty() && password.isNotEmpty()
+                enabled = true
             )
         }
 
@@ -230,10 +226,8 @@ fun SignupScreenPreview() {
     FinexisTheme {
         SignupScreenContent(
             isLoading = false,
-            errorMessage = null,
             onSignupClick = { _, _, _ -> },
-            onNavigateToLogin = {},
-            clearError = {}
+            onNavigateToLogin = {}
         )
     }
 }

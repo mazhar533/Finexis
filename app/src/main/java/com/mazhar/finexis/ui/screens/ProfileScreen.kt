@@ -1,7 +1,7 @@
 package com.mazhar.finexis.ui.screens
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -62,51 +62,56 @@ fun ProfileScreen(
         authViewModel.checkEmailVerificationStatus()
     }
 
-    ProfileScreenContent(
-        userName = displayNameState,
-        userEmail = emailToDisplay,
-        isVerified = isVerified,
-        onUserCardClick = { showAccountInfo = true },
-        isDarkMode = isDarkMode,
-        isBiometricEnabled = isBiometricEnabled,
-        currency = currency,
-        onThemeToggle = { preferenceViewModel.toggleTheme() },
-        onBiometricToggle = {
-            if (!isBiometricEnabled) {
-                if (com.mazhar.finexis.ui.utils.BiometricHelper.isBiometricSupported(context)) {
-                    preferenceViewModel.toggleBiometric()
+    Box(modifier = modifier.fillMaxSize()) {
+        ProfileScreenContent(
+            userName = displayNameState,
+            userEmail = emailToDisplay,
+            isVerified = isVerified,
+            onUserCardClick = { showAccountInfo = true },
+            isDarkMode = isDarkMode,
+            isBiometricEnabled = isBiometricEnabled,
+            currency = currency,
+            onThemeToggle = { preferenceViewModel.toggleTheme() },
+            onBiometricToggle = {
+                if (!isBiometricEnabled) {
+                    if (com.mazhar.finexis.ui.utils.BiometricHelper.isBiometricSupported(context)) {
+                        preferenceViewModel.toggleBiometric()
+                    } else {
+                        preferenceViewModel.showToast("Touch ID is not supported or set up on this device.", true)
+                    }
                 } else {
-                    android.widget.Toast.makeText(
-                        context,
-                        "Biometric authentication is not supported or set up on this device.",
-                        android.widget.Toast.LENGTH_LONG
-                    ).show()
+                    preferenceViewModel.toggleBiometric()
                 }
-            } else {
-                preferenceViewModel.toggleBiometric()
-            }
-        },
-        onCurrencyToggle = { showCurrencyDialog = true },
-        onLogout = {
-            authViewModel.logout()
-            onLogoutSuccess()
-        },
-        onExportPdf = {
-            val incomeAmount = expenses.filter { it.isIncome }.sumOf { it.amount }
-            val expenseAmount = expenses.filter { !it.isIncome }.sumOf { it.amount }
-            val savingsAmount = incomeAmount - expenseAmount
+            },
+            onCurrencyToggle = { showCurrencyDialog = true },
+            onLogout = {
+                authViewModel.logout()
+                preferenceViewModel.showToast("Logout successful", false)
+                onLogoutSuccess()
+            },
+            onExportPdf = {
+                val incomeAmount = expenses.filter { it.isIncome }.sumOf { it.amount }
+                val expenseAmount = expenses.filter { !it.isIncome }.sumOf { it.amount }
+                val savingsAmount = incomeAmount - expenseAmount
 
-            com.mazhar.finexis.ui.utils.PdfExportHelper.exportTransactionsToPdf(
-                context = context,
-                expenses = expenses,
-                currency = currency,
-                totalIncome = incomeAmount,
-                totalExpenses = expenseAmount,
-                savings = savingsAmount
-            )
-        },
-        modifier = modifier
-    )
+                com.mazhar.finexis.ui.utils.PdfExportHelper.exportTransactionsToPdf(
+                    context = context,
+                    expenses = expenses,
+                    currency = currency,
+                    totalIncome = incomeAmount,
+                    totalExpenses = expenseAmount,
+                    savings = savingsAmount,
+                    onSuccess = {
+                        preferenceViewModel.showToast("PDF statement exported successfully!", false)
+                    },
+                    onError = { err ->
+                        preferenceViewModel.showToast(err, true)
+                    }
+                )
+            },
+            modifier = Modifier.fillMaxSize()
+        )
+    }
 
     if (showAccountInfo) {
         AccountInfoBottomSheet(
@@ -114,7 +119,10 @@ fun ProfileScreen(
             userName = displayNameState,
             userEmail = emailToDisplay,
             isDark = isDarkMode,
-            onDismiss = { showAccountInfo = false }
+            onDismiss = { showAccountInfo = false },
+            onShowToast = { msg, isErr ->
+                preferenceViewModel.showToast(msg, isErr)
+            }
         )
     }
 
@@ -196,7 +204,7 @@ fun ProfileScreenContent(
     onCurrencyToggle: () -> Unit,
     onLogout: () -> Unit,
     onExportPdf: () -> Unit = {},
-    modifier: Modifier = Modifier
+    @SuppressLint("ModifierParameter") modifier: Modifier = Modifier
 ) {
     Column(
         modifier = modifier
@@ -395,8 +403,8 @@ fun ProfileScreenContent(
                     // Biometric Login Row
                     ProfileSettingRow(
                         iconResId = R.drawable.icon_biomatric,
-                        title = "Biometric Login",
-                        subtitle = "Face ID / Touch ID",
+                        title = "Touch ID Login",
+                        subtitle = "Touch ID",
                         action = {
                             Switch(
                                 checked = isBiometricEnabled,

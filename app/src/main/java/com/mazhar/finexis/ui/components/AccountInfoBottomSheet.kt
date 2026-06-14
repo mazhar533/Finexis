@@ -1,6 +1,6 @@
 package com.mazhar.finexis.ui.components
 
-import android.widget.Toast
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.mazhar.finexis.R
 import com.mazhar.finexis.viewmodel.AuthViewModel
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,6 +33,7 @@ fun AccountInfoBottomSheet(
     userEmail: String,
     isDark: Boolean,
     onDismiss: () -> Unit,
+    onShowToast: (String, Boolean) -> Unit,
     sheetState: SheetState = rememberModalBottomSheetState()
 ) {
     val context = LocalContext.current
@@ -49,7 +51,7 @@ fun AccountInfoBottomSheet(
     LaunchedEffect(Unit) {
         while (true) {
             authViewModel.checkEmailVerificationStatus()
-            kotlinx.coroutines.delay(3000)
+            kotlinx.coroutines.delay(3000.milliseconds)
         }
     }
 
@@ -195,7 +197,7 @@ fun AccountInfoBottomSheet(
                                         if (success) {
                                             isEditingName = false
                                         }
-                                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                                        onShowToast(message, !success)
                                     }
                                 },
                                 modifier = Modifier.size(36.dp)
@@ -321,7 +323,7 @@ fun AccountInfoBottomSheet(
                 Button(
                     onClick = {
                         authViewModel.sendEmailVerification { success, message ->
-                            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+                            onShowToast(message, !success)
                         }
                     },
                     colors = ButtonDefaults.buttonColors(

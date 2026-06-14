@@ -1,5 +1,6 @@
 package com.mazhar.finexis.ui.screens
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -33,7 +34,6 @@ import androidx.compose.foundation.pager.rememberPagerState
 import kotlinx.coroutines.launch
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.scaleIn
-import android.widget.Toast
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.text.style.TextAlign
@@ -54,6 +54,7 @@ data class NavigationItem(
     val iconResId: Int
 )
 
+@SuppressLint("DefaultLocale")
 @Composable
 fun MainContainerScreen(
     onLogoutSuccess: () -> Unit,
@@ -74,6 +75,7 @@ fun MainContainerScreen(
 
     val isBiometricEnabled by preferenceViewModel.isBiometricEnabled.collectAsState()
     var isAppUnlocked by rememberSaveable { mutableStateOf(false) }
+    var lockScreenError by remember { mutableStateOf<String?>(null) }
 
     val triggerBiometricUnlock = {
         val activity = com.mazhar.finexis.ui.utils.BiometricHelper.findActivity(context)
@@ -84,9 +86,10 @@ fun MainContainerScreen(
                 subtitle = "Authenticate using fingerprint or face unlock to access the app",
                 onSuccess = {
                     isAppUnlocked = true
+                    lockScreenError = null
                 },
                 onError = { err ->
-                    Toast.makeText(context, "Unlock failed: $err", Toast.LENGTH_SHORT).show()
+                    lockScreenError = "Unlock failed: $err"
                 }
             )
         } else {
@@ -156,7 +159,7 @@ fun MainContainerScreen(
                     "Monthly Budget Exceeded! ⚠️",
                     "You have exceeded your monthly budget! Total spent: Rs ${String.format("%.2f", totalSpent)} / Rs ${String.format("%.2f", monthlyLimit)}"
                 )
-            } else if (ratio >= 0.9 && ratio < 1.0 && lastWarnedMonth != "${currentMonthStr}_90" && lastWarnedMonth != "${currentMonthStr}_100") {
+            } else if (ratio in 0.9..<1.0 && lastWarnedMonth != "${currentMonthStr}_90" && lastWarnedMonth != "${currentMonthStr}_100") {
                 lastWarnedMonth = "${currentMonthStr}_90"
                 com.mazhar.finexis.notification.NotificationHelper.showBudgetAlert(
                     context,
@@ -334,12 +337,23 @@ fun MainContainerScreen(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
-                        text = "Authenticate using fingerprint or face unlock to access your account",
+                        text = "Authenticate using Touch ID to access your account",
                         fontSize = 14.sp,
                         color = MaterialTheme.colorScheme.secondary,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.padding(horizontal = 24.dp)
                     )
+
+                    if (lockScreenError != null) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = lockScreenError!!,
+                            color = Color.Red,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center
+                        )
+                    }
 
                     Spacer(modifier = Modifier.height(40.dp))
 

@@ -225,12 +225,29 @@ fun BudgetDialog(
             Button(
                 onClick = {
                     val mLimit = monthlyLimit.toDoubleOrNull() ?: 0.0
-                    val fLimit = foodLimit.toDoubleOrNull() ?: 0.0
-                    val tLimit = transportLimit.toDoubleOrNull() ?: 0.0
-                    val sLimit = shoppingLimit.toDoubleOrNull() ?: 0.0
-                    val oLimit = otherLimit.toDoubleOrNull() ?: 0.0
+                    var fLimit = foodLimit.toDoubleOrNull() ?: 0.0
+                    var tLimit = transportLimit.toDoubleOrNull() ?: 0.0
+                    var sLimit = shoppingLimit.toDoubleOrNull() ?: 0.0
+                    var oLimit = otherLimit.toDoubleOrNull() ?: 0.0
 
                     if (mLimit > 0) {
+                        val unsetCategories = mutableListOf<String>()
+                        var sumOfSet = 0.0
+
+                        if (fLimit > 0.0) sumOfSet += fLimit else unsetCategories.add("food")
+                        if (tLimit > 0.0) sumOfSet += tLimit else unsetCategories.add("transport")
+                        if (sLimit > 0.0) sumOfSet += sLimit else unsetCategories.add("shopping")
+                        if (oLimit > 0.0) sumOfSet += oLimit else unsetCategories.add("other")
+
+                        val remaining = mLimit - sumOfSet
+                        if (remaining > 0.0 && unsetCategories.isNotEmpty()) {
+                            val share = remaining / unsetCategories.size
+                            if (unsetCategories.contains("food")) fLimit = share
+                            if (unsetCategories.contains("transport")) tLimit = share
+                            if (unsetCategories.contains("shopping")) sLimit = share
+                            if (unsetCategories.contains("other")) oLimit = share
+                        }
+
                         onConfirm(mLimit, fLimit, tLimit, sLimit, oLimit)
                     }
                 },

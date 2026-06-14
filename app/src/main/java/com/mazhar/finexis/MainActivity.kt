@@ -24,6 +24,8 @@ import com.mazhar.finexis.ui.navigation.Screen
 import com.mazhar.finexis.ui.theme.FinexisTheme
 import com.mazhar.finexis.viewmodel.AuthViewModel
 import com.mazhar.finexis.viewmodel.PreferenceViewModel
+import com.mazhar.finexis.ui.components.FinexisToast
+import androidx.compose.foundation.layout.Box
 import java.util.Calendar
 import java.util.concurrent.TimeUnit
 
@@ -60,20 +62,32 @@ class MainActivity : FragmentActivity() {
 
         setContent {
             val isDarkMode by preferenceViewModel.isDarkMode.collectAsState()
+            val globalToast by preferenceViewModel.globalToast.collectAsState()
             
             FinexisTheme(darkTheme = isDarkMode) {
                 val navController = rememberNavController()
                 
                 val startDestination = Screen.Splash.route
-
+ 
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    FinexisNavGraph(
-                        navController = navController,
-                        authViewModel = authViewModel,
-                        startDestination = startDestination,
-                        preferenceViewModel = preferenceViewModel,
-                        modifier = Modifier
-                    )
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        FinexisNavGraph(
+                            navController = navController,
+                            authViewModel = authViewModel,
+                            startDestination = startDestination,
+                            preferenceViewModel = preferenceViewModel,
+                            modifier = Modifier
+                        )
+
+                        globalToast?.let { toast ->
+                            FinexisToast(
+                                message = toast.first,
+                                visible = true,
+                                isError = toast.second,
+                                onDismiss = { preferenceViewModel.clearToast() }
+                            )
+                        }
+                    }
                 }
             }
         }

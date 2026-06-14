@@ -1,5 +1,6 @@
 package com.mazhar.finexis.viewmodel
 
+import android.annotation.SuppressLint
 import android.app.Application
 import android.content.Context
 import androidx.lifecycle.AndroidViewModel
@@ -12,7 +13,7 @@ import kotlinx.coroutines.flow.StateFlow
 class PreferenceViewModel(application: Application) : AndroidViewModel(application) {
     private val sharedPrefs = try {
         application.getSharedPreferences("finexis_prefs", Context.MODE_PRIVATE)
-    } catch (e: Exception) {
+    } catch (_: Exception) {
         null
     }
 
@@ -28,22 +29,36 @@ class PreferenceViewModel(application: Application) : AndroidViewModel(applicati
     private val _isOnboardingCompleted = MutableStateFlow(sharedPrefs?.getBoolean("onboarding_completed", false) ?: false)
     val isOnboardingCompleted: StateFlow<Boolean> = _isOnboardingCompleted
 
+    private val _globalToast = MutableStateFlow<Pair<String, Boolean>?>(null)
+    val globalToast: StateFlow<Pair<String, Boolean>?> = _globalToast
+
+    fun showToast(message: String, isError: Boolean) {
+        _globalToast.value = Pair(message, isError)
+    }
+
+    fun clearToast() {
+        _globalToast.value = null
+    }
+
     init {
         loadRatesFromCache()
         fetchExchangeRates()
     }
 
+    @SuppressLint("UseKtx")
     fun toggleTheme() {
         val newValue = !_isDarkMode.value
         _isDarkMode.value = newValue
         sharedPrefs?.edit()?.putBoolean("dark_mode", newValue)?.apply()
     }
 
+    @SuppressLint("UseKtx")
     fun setCurrency(currencyCode: String) {
         _currency.value = currencyCode
         sharedPrefs?.edit()?.putString("currency", currencyCode)?.apply()
     }
 
+    @SuppressLint("UseKtx")
     fun toggleBiometric() {
         val newValue = !_isBiometricEnabled.value
         _isBiometricEnabled.value = newValue
@@ -78,6 +93,7 @@ class PreferenceViewModel(application: Application) : AndroidViewModel(applicati
         }
     }
 
+    @SuppressLint("UseKtx")
     fun completeOnboarding() {
         _isOnboardingCompleted.value = true
         sharedPrefs?.edit()?.putBoolean("onboarding_completed", true)?.apply()

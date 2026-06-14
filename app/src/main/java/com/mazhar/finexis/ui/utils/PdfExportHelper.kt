@@ -5,7 +5,6 @@ import android.content.Intent
 import android.graphics.*
 import android.graphics.pdf.PdfDocument
 import android.net.Uri
-import android.widget.Toast
 import androidx.core.content.FileProvider
 import com.mazhar.finexis.model.Expense
 import java.io.File
@@ -22,10 +21,12 @@ object PdfExportHelper {
         currency: String,
         totalIncome: Double,
         totalExpenses: Double,
-        savings: Double
+        savings: Double,
+        onSuccess: () -> Unit = {},
+        onError: (String) -> Unit = {}
     ) {
         if (expenses.isEmpty()) {
-            Toast.makeText(context, "No transactions to export", Toast.LENGTH_SHORT).show()
+            onError("No transactions to export")
             return
         }
 
@@ -254,19 +255,20 @@ object PdfExportHelper {
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             }
             context.startActivity(Intent.createChooser(shareIntent, "Export Transaction Report"))
+            onSuccess()
 
         } catch (e: Exception) {
             e.printStackTrace()
-            Toast.makeText(context, "Error exporting PDF: " + e.localizedMessage, Toast.LENGTH_LONG).show()
+            onError("Error exporting PDF: " + e.localizedMessage)
         }
     }
 
     private fun truncateText(text: String, paint: Paint, maxWidth: Float): String {
         if (paint.measureText(text) <= maxWidth) return text
         var truncated = text
-        while (truncated.isNotEmpty() && paint.measureText(truncated + "...") > maxWidth) {
+        while (truncated.isNotEmpty() && paint.measureText("$truncated...") > maxWidth) {
             truncated = truncated.dropLast(1)
         }
-        return if (truncated.isNotEmpty()) truncated + "..." else "..."
+        return if (truncated.isNotEmpty()) "$truncated..." else "..."
     }
 }
