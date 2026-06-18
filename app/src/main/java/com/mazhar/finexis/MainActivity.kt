@@ -10,7 +10,6 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -69,25 +68,21 @@ class MainActivity : FragmentActivity() {
                 
                 val startDestination = Screen.Splash.route
  
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        FinexisNavGraph(
-                            navController = navController,
-                            authViewModel = authViewModel,
-                            startDestination = startDestination,
-                            preferenceViewModel = preferenceViewModel,
-                            modifier = Modifier
-                        )
+                Box(modifier = Modifier.fillMaxSize()) {
+                    FinexisNavGraph(
+                        navController = navController,
+                        authViewModel = authViewModel,
+                        startDestination = startDestination,
+                        preferenceViewModel = preferenceViewModel,
+                        modifier = Modifier
+                    )
 
-                        globalToast?.let { toast ->
-                            FinexisToast(
-                                message = toast.first,
-                                visible = true,
-                                isError = toast.second,
-                                onDismiss = { preferenceViewModel.clearToast() }
-                            )
-                        }
-                    }
+                    FinexisToast(
+                        message = globalToast?.first ?: "",
+                        visible = globalToast != null,
+                        isError = globalToast?.second ?: false,
+                        onDismiss = { preferenceViewModel.clearToast() }
+                    )
                 }
             }
         }

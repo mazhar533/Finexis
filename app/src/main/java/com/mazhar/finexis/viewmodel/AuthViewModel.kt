@@ -7,6 +7,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 class AuthViewModel : ViewModel() {
     private var auth: FirebaseAuth? = null
@@ -25,7 +26,7 @@ class AuthViewModel : ViewModel() {
     private val _isEmailVerified = MutableStateFlow(false)
     val isEmailVerified: StateFlow<Boolean> = _isEmailVerified
 
-    private val _displayName = MutableStateFlow<String>("Mazharalihaider4")
+    private val _displayName = MutableStateFlow("Mazharalihaider4")
     val displayName: StateFlow<String> = _displayName
 
     private fun extractDisplayName(email: String?): String {
@@ -43,7 +44,7 @@ class AuthViewModel : ViewModel() {
             _currentUser.value = email
             _isEmailVerified.value = auth?.currentUser?.isEmailVerified ?: false
             _displayName.value = auth?.currentUser?.displayName ?: extractDisplayName(email)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             isMockMode = true
             _currentUser.value = null
             _displayName.value = "Mazharalihaider4"
@@ -61,7 +62,7 @@ class AuthViewModel : ViewModel() {
 
         if (isMockMode || auth == null) {
             viewModelScope.launch {
-                delay(1000)
+                delay(1000.milliseconds)
                 _isLoading.value = false
                 _currentUser.value = email
                 _displayName.value = extractDisplayName(email)
@@ -95,7 +96,7 @@ class AuthViewModel : ViewModel() {
 
         if (isMockMode || auth == null) {
             viewModelScope.launch {
-                delay(1000)
+                delay(1000.milliseconds)
                 _isLoading.value = false
                 _currentUser.value = email
                 _displayName.value = displayName
@@ -144,11 +145,9 @@ class AuthViewModel : ViewModel() {
             return
         }
         val user = auth?.currentUser
-        if (user != null) {
-            user.reload().addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    _isEmailVerified.value = user.isEmailVerified
-                }
+        user?.reload()?.addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                _isEmailVerified.value = user.isEmailVerified
             }
         }
     }
@@ -156,7 +155,7 @@ class AuthViewModel : ViewModel() {
     fun sendEmailVerification(onComplete: (Boolean, String) -> Unit) {
         if (isMockMode || auth == null) {
             viewModelScope.launch {
-                delay(1000)
+                delay(1000.milliseconds)
                 _isEmailVerified.value = true // Simulate verification success on mock mode for UX
                 onComplete(true, "Verification email sent successfully! (Mock Mode)")
             }
@@ -185,7 +184,7 @@ class AuthViewModel : ViewModel() {
         _displayName.value = newName
         if (isMockMode || auth == null) {
             viewModelScope.launch {
-                delay(500)
+                delay(500.milliseconds)
                 onComplete(true, "Name updated successfully!")
             }
         } else {
@@ -216,7 +215,7 @@ class AuthViewModel : ViewModel() {
         _isLoading.value = true
         if (isMockMode || auth == null) {
             viewModelScope.launch {
-                delay(1000)
+                delay(1000.milliseconds)
                 _isLoading.value = false
                 onComplete(true, "Password reset link sent to $email successfully! (Mock Mode)")
             }

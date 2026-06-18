@@ -26,6 +26,9 @@ import com.mazhar.finexis.viewmodel.ExpenseViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import com.mazhar.finexis.ui.components.FadeInSlideUp
 import com.mazhar.finexis.ui.components.StaggeredItem
 import com.mazhar.finexis.ui.components.FinexisToast
@@ -34,6 +37,7 @@ import java.util.Calendar
 import java.text.SimpleDateFormat
 import java.util.Locale
 import java.util.Date
+import kotlin.math.roundToInt
 
 data class CategorySpending(
     val name: String,
@@ -45,7 +49,8 @@ data class CategorySpending(
 fun AnalyticsScreen(
     modifier: Modifier = Modifier,
     viewModel: ExpenseViewModel = viewModel(),
-    currency: String = "PKR"
+    currency: String = "PKR",
+    onChartPositioned: (Rect) -> Unit = {}
 ) {
     val expenses by viewModel.expenses.collectAsState()
     val context = LocalContext.current
@@ -132,7 +137,8 @@ fun AnalyticsScreen(
                         isToastError = true
                     }
                 )
-            }
+            },
+            onChartPositioned = onChartPositioned
         )
 
         FinexisToast(
@@ -156,7 +162,8 @@ fun AnalyticsScreenContent(
     expenses: List<Expense>,
     currency: String,
     modifier: Modifier = Modifier,
-    onExportPdf: () -> Unit = {}
+    onExportPdf: () -> Unit = {},
+    onChartPositioned: (Rect) -> Unit = {}
 ) {
     var selectedMonthIndex by remember { mutableStateOf<Int?>(null) } // Start with no selection
     var expandedCategory by remember { mutableStateOf<String?>(null) }
@@ -299,6 +306,11 @@ fun AnalyticsScreenContent(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .onGloballyPositioned { layoutCoordinates ->
+                        val position = layoutCoordinates.positionInRoot()
+                        val size = layoutCoordinates.size
+                        onChartPositioned(Rect(position.x, position.y, position.x + size.width, position.y + size.height))
+                    }
                     .padding(bottom = 24.dp),
                 shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -395,7 +407,7 @@ fun AnalyticsScreenContent(
                                 ) {
                                     Column {
                                         Text(
-                                            text = if (expense.description.isNotEmpty()) expense.description else expense.category,
+                                            text = expense.description.ifEmpty { expense.category },
                                             fontSize = 15.sp,
                                             fontWeight = FontWeight.SemiBold,
                                             color = MaterialTheme.colorScheme.onSurface
@@ -464,7 +476,7 @@ fun AnalyticsScreenContent(
                         categories.forEachIndexed { index, cat ->
                             val isExpanded = expandedCategory == cat.name
                             val categoryExpenses = remember(expenses, cat.name) {
-                                expenses.filter { !it.isIncome && it.category.lowercase() == cat.name.lowercase() }
+                                expenses.filter { !it.isIncome && it.category.equals(cat.name, ignoreCase = true) }
                                     .sortedByDescending { it.date }
                             }
 
@@ -565,7 +577,7 @@ fun AnalyticsScreenContent(
                                                 ) {
                                                     Column {
                                                         Text(
-                                                            text = if (expense.description.isNotEmpty()) expense.description else "Expense",
+                                                            text = expense.description.ifEmpty { "Expense" },
                                                             fontSize = 14.sp,
                                                             fontWeight = FontWeight.Medium,
                                                             color = MaterialTheme.colorScheme.onSurface
@@ -621,7 +633,7 @@ private fun formatAmountCompact(amount: Float, currency: String): String {
             val formatted = String.format(Locale.US, "%.1f", converted / 1000f)
             symbol + formatted.removeSuffix(".0") + "k"
         }
-        else -> symbol + java.lang.Math.round(converted).toString()
+        else -> symbol + converted.roundToInt().toString()
     }
 }
 
@@ -646,7 +658,7 @@ fun SimpleBarChart(
             verticalAlignment = Alignment.Bottom
         ) {
             val maxVal = (values.maxOrNull() ?: 1f).coerceAtLeast(1f)
-            days.forEachIndexed { index, day ->
+            days.forEachIndexed { index, _ ->
                 val value = values.getOrElse(index) { 0f }
                 val fillHeightRatio = value / maxVal
 

@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun FadeInSlideUp(
@@ -18,7 +19,7 @@ fun FadeInSlideUp(
     val visibleState = remember { MutableTransitionState(false) }
     LaunchedEffect(Unit) {
         if (delayMillis > 0) {
-            delay(delayMillis.toLong())
+            delay(delayMillis.toLong().milliseconds)
         }
         visibleState.targetState = true
     }

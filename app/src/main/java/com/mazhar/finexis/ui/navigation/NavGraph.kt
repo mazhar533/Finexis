@@ -1,15 +1,11 @@
 package com.mazhar.finexis.ui.navigation
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
+
+import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -18,8 +14,6 @@ import com.mazhar.finexis.ui.screens.SignupScreen
 import com.mazhar.finexis.ui.screens.MainContainerScreen
 import com.mazhar.finexis.ui.screens.SplashScreen
 import com.mazhar.finexis.ui.screens.OnboardingScreen
-import com.mazhar.finexis.ui.theme.FinexisBg
-import com.mazhar.finexis.ui.theme.FinexisTextPrimary
 import com.mazhar.finexis.viewmodel.AuthViewModel
 import com.mazhar.finexis.viewmodel.PreferenceViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -38,7 +32,7 @@ fun FinexisNavGraph(
     authViewModel: AuthViewModel,
     startDestination: String,
     preferenceViewModel: PreferenceViewModel = viewModel(),
-    modifier: Modifier = Modifier
+    @SuppressLint("ModifierParameter") modifier: Modifier = Modifier
 ) {
     NavHost(
         navController = navController,

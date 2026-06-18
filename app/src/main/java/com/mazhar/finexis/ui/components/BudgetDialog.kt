@@ -67,6 +67,12 @@ fun BudgetDialog(
     var shoppingLimit by remember { mutableStateOf(initialShopping) }
     var otherLimit by remember { mutableStateOf(initialOther) }
 
+    var isMonthlyEdited by remember { mutableStateOf(false) }
+    var isFoodEdited by remember { mutableStateOf(false) }
+    var isTransportEdited by remember { mutableStateOf(false) }
+    var isShoppingEdited by remember { mutableStateOf(false) }
+    var isOtherEdited by remember { mutableStateOf(false) }
+
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
@@ -141,6 +147,7 @@ fun BudgetDialog(
                     onValueChange = { input ->
                         if (input.isEmpty() || input.toDoubleOrNull() != null) {
                             monthlyLimit = input
+                            isMonthlyEdited = true
                         }
                     },
                     placeholder = { Text("Enter monthly limit", color = MaterialTheme.colorScheme.outline) },
@@ -185,7 +192,10 @@ fun BudgetDialog(
                     iconTint = Color(0xFFF59E0B),
                     value = foodLimit,
                     currency = currency,
-                    onValueChange = { foodLimit = it }
+                    onValueChange = {
+                        foodLimit = it
+                        isFoodEdited = true
+                    }
                 )
 
                 // Transport Limit
@@ -195,7 +205,10 @@ fun BudgetDialog(
                     iconTint = Color(0xFF3B82F6),
                     value = transportLimit,
                     currency = currency,
-                    onValueChange = { transportLimit = it }
+                    onValueChange = {
+                        transportLimit = it
+                        isTransportEdited = true
+                    }
                 )
 
                 // Shopping Limit
@@ -205,7 +218,10 @@ fun BudgetDialog(
                     iconTint = Color(0xFFEC4899),
                     value = shoppingLimit,
                     currency = currency,
-                    onValueChange = { shoppingLimit = it }
+                    onValueChange = {
+                        shoppingLimit = it
+                        isShoppingEdited = true
+                    }
                 )
 
                 // Other Limit
@@ -215,7 +231,10 @@ fun BudgetDialog(
                     iconTint = Color(0xFF8B5CF6),
                     value = otherLimit,
                     currency = currency,
-                    onValueChange = { otherLimit = it }
+                    onValueChange = {
+                        otherLimit = it
+                        isOtherEdited = true
+                    }
                 )
             }
 
@@ -225,27 +244,47 @@ fun BudgetDialog(
             Button(
                 onClick = {
                     val mLimit = monthlyLimit.toDoubleOrNull() ?: 0.0
+                    val initialMLimit = initialMonthly.toDoubleOrNull() ?: 0.0
+
                     var fLimit = foodLimit.toDoubleOrNull() ?: 0.0
                     var tLimit = transportLimit.toDoubleOrNull() ?: 0.0
                     var sLimit = shoppingLimit.toDoubleOrNull() ?: 0.0
                     var oLimit = otherLimit.toDoubleOrNull() ?: 0.0
 
                     if (mLimit > 0) {
-                        val unsetCategories = mutableListOf<String>()
-                        var sumOfSet = 0.0
+                        val isAnyCategoryEdited = isFoodEdited || isTransportEdited || isShoppingEdited || isOtherEdited
 
-                        if (fLimit > 0.0) sumOfSet += fLimit else unsetCategories.add("food")
-                        if (tLimit > 0.0) sumOfSet += tLimit else unsetCategories.add("transport")
-                        if (sLimit > 0.0) sumOfSet += sLimit else unsetCategories.add("shopping")
-                        if (oLimit > 0.0) sumOfSet += oLimit else unsetCategories.add("other")
+                        if (isAnyCategoryEdited) {
+                            var sumOfEdited = 0.0
+                            val uneditedCategories = mutableListOf<String>()
 
-                        val remaining = mLimit - sumOfSet
-                        if (remaining > 0.0 && unsetCategories.isNotEmpty()) {
-                            val share = remaining / unsetCategories.size
-                            if (unsetCategories.contains("food")) fLimit = share
-                            if (unsetCategories.contains("transport")) tLimit = share
-                            if (unsetCategories.contains("shopping")) sLimit = share
-                            if (unsetCategories.contains("other")) oLimit = share
+                            if (isFoodEdited) sumOfEdited += fLimit else uneditedCategories.add("food")
+                            if (isTransportEdited) sumOfEdited += tLimit else uneditedCategories.add("transport")
+                            if (isShoppingEdited) sumOfEdited += sLimit else uneditedCategories.add("shopping")
+                            if (isOtherEdited) sumOfEdited += oLimit else uneditedCategories.add("other")
+
+                            val remaining = mLimit - sumOfEdited
+                            if (uneditedCategories.isNotEmpty()) {
+                                val share = if (remaining > 0.0) remaining / uneditedCategories.size else 0.0
+                                if (uneditedCategories.contains("food")) fLimit = share
+                                if (uneditedCategories.contains("transport")) tLimit = share
+                                if (uneditedCategories.contains("shopping")) sLimit = share
+                                if (uneditedCategories.contains("other")) oLimit = share
+                            }
+                        } else {
+                            if (isMonthlyEdited && initialMLimit > 0.0) {
+                                val ratio = mLimit / initialMLimit
+                                fLimit = (initialFood.toDoubleOrNull() ?: 0.0) * ratio
+                                tLimit = (initialTransport.toDoubleOrNull() ?: 0.0) * ratio
+                                sLimit = (initialShopping.toDoubleOrNull() ?: 0.0) * ratio
+                                oLimit = (initialOther.toDoubleOrNull() ?: 0.0) * ratio
+                            } else if (fLimit == 0.0 && tLimit == 0.0 && sLimit == 0.0 && oLimit == 0.0) {
+                                val share = mLimit / 4.0
+                                fLimit = share
+                                tLimit = share
+                                sLimit = share
+                                oLimit = share
+                            }
                         }
 
                         onConfirm(mLimit, fLimit, tLimit, sLimit, oLimit)

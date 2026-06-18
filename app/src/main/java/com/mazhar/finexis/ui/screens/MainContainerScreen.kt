@@ -37,6 +37,9 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.geometry.Rect
+import com.mazhar.finexis.ui.components.FinexisTutorialOverlay
+import com.mazhar.finexis.ui.components.TutorialStep
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.Lifecycle
 import androidx.compose.animation.scaleOut
@@ -78,6 +81,7 @@ fun MainContainerScreen(
     var lockScreenError by remember { mutableStateOf<String?>(null) }
 
     val triggerBiometricUnlock = {
+        lockScreenError = null
         val activity = com.mazhar.finexis.ui.utils.BiometricHelper.findActivity(context)
         if (activity != null) {
             com.mazhar.finexis.ui.utils.BiometricHelper.showBiometricPrompt(
@@ -117,6 +121,74 @@ fun MainContainerScreen(
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
+    val isTutorialCompleted by preferenceViewModel.isTutorialCompleted.collectAsState()
+    var activeStepIndex by remember { mutableIntStateOf(0) }
+
+    // Coordinates states for all tutorial targets across screens
+    var notificationCoordinates by remember { mutableStateOf<Rect?>(null) }
+    var balanceCoordinates by remember { mutableStateOf<Rect?>(null) }
+    var budgetCoordinates by remember { mutableStateOf<Rect?>(null) }
+    var historyFiltersCoordinates by remember { mutableStateOf<Rect?>(null) }
+    var analyticsChartCoordinates by remember { mutableStateOf<Rect?>(null) }
+    var budgetLimitsCoordinates by remember { mutableStateOf<Rect?>(null) }
+    var profilePreferencesCoordinates by remember { mutableStateOf<Rect?>(null) }
+
+    val tutorialSteps = remember {
+        listOf(
+            TutorialStep(
+                title = "Daily Notifications",
+                description = "Tap the notification bell to view your history of budget limit warnings and daily reminders.",
+                stepKey = "notification"
+            ),
+            TutorialStep(
+                title = "Total Wealth & Currency Selector",
+                description = "Your total net balance is displayed here. You can click the currency pill inside the card to instantly switch currencies.",
+                stepKey = "balance"
+            ),
+            TutorialStep(
+                title = "Monthly Budget Limits",
+                description = "This progress bar tracks your monthly spent budget. Tap anywhere on the card to set new limits.",
+                stepKey = "budget"
+            ),
+            TutorialStep(
+                title = "Search & Category Filters",
+                description = "On the History tab, you can search transactions by description or filter by payment type, date range, and category.",
+                stepKey = "history_filters"
+            ),
+            TutorialStep(
+                title = "Spending Analytics Chart",
+                description = "On the Analytics tab, monitor your spending trend over the last 6 months. Tap any bar to see daily details below.",
+                stepKey = "analytics_chart"
+            ),
+            TutorialStep(
+                title = "Set Category Budgets",
+                description = "On the Budgets tab, you can configure your monthly limit and assign budgets to categories. Any unset category gets auto-partitioned.",
+                stepKey = "budget_limits"
+            ),
+            TutorialStep(
+                title = "App Settings & Preferences",
+                description = "On the Profile tab, manage your default currency, toggle Dark Mode, and enable biometric fingerprint login.",
+                stepKey = "profile_preferences"
+            )
+        )
+    }
+
+    LaunchedEffect(activeStepIndex, isTutorialCompleted) {
+        if (!isTutorialCompleted) {
+            val targetPage = when (activeStepIndex) {
+                0, 1, 2 -> 0 // Home Screen
+                3 -> 1       // History Screen
+                4 -> 2       // Analytics Screen
+                5 -> 3       // Budget Screen
+                6 -> 4       // Profile Screen
+                else -> 0
+            }
+            if (pagerState.currentPage != targetPage) {
+                pagerState.animateScrollToPage(targetPage)
+            }
         }
     }
 
@@ -191,7 +263,7 @@ fun MainContainerScreen(
                         "Category Limit Exceeded! ⚠️",
                         "The $name category budget has been exceeded! Total spent: Rs ${String.format("%.2f", spent)} / Rs ${String.format("%.2f", limit)}"
                     )
-                } else if (ratio >= 0.9 && ratio < 1.0 && !lastWarnedCategories.contains(key90) && !lastWarnedCategories.contains(key100)) {
+                } else if (ratio in 0.9..<1.0 && !lastWarnedCategories.contains(key90) && !lastWarnedCategories.contains(key100)) {
                     newWarnedCategories.add(key90)
                     com.mazhar.finexis.notification.NotificationHelper.showBudgetAlert(
                         context,
@@ -212,15 +284,17 @@ fun MainContainerScreen(
             CustomBottomBar(
                 selectedTabIndex = pagerState.currentPage,
                 onTabSelected = { index ->
-                    coroutineScope.launch {
-                        pagerState.scrollToPage(index)
+                    if (isTutorialCompleted) {
+                        coroutineScope.launch {
+                            pagerState.scrollToPage(index)
+                        }
                     }
                 }
             )
         },
         floatingActionButton = {
             AnimatedVisibility(
-                visible = pagerState.currentPage == 0 || pagerState.currentPage == 2,
+                visible = (pagerState.currentPage == 0 || pagerState.currentPage == 2) && isTutorialCompleted,
                 enter = scaleIn(),
                 exit = scaleOut()
             ) {
@@ -247,6 +321,7 @@ fun MainContainerScreen(
         ) {
             HorizontalPager(
                 state = pagerState,
+                userScrollEnabled = isTutorialCompleted,
                 modifier = Modifier.fillMaxSize()
             ) { page ->
                 when (page) {
@@ -262,13 +337,64 @@ fun MainContainerScreen(
                             coroutineScope.launch {
                                 pagerState.animateScrollToPage(4)
                             }
-                        }
+                        },
+                        onNotificationPositioned = { notificationCoordinates = it },
+                        onBalancePositioned = { balanceCoordinates = it },
+                        onBudgetPositioned = { budgetCoordinates = it }
                     )
-                    1 -> HistoryScreen(viewModel = expenseViewModel, currency = currency)
-                    2 -> AnalyticsScreen(viewModel = expenseViewModel, currency = currency)
-                    3 -> BudgetScreen(viewModel = expenseViewModel, budgetViewModel = budgetViewModel, currency = currency)
-                    4 -> ProfileScreen(onLogoutSuccess = onLogoutSuccess, preferenceViewModel = preferenceViewModel, authViewModel = authViewModel)
+                    1 -> HistoryScreen(
+                        viewModel = expenseViewModel,
+                        preferenceViewModel = preferenceViewModel,
+                        currency = currency,
+                        onFiltersPositioned = { historyFiltersCoordinates = it }
+                    )
+                    2 -> AnalyticsScreen(
+                        viewModel = expenseViewModel,
+                        currency = currency,
+                        onChartPositioned = { analyticsChartCoordinates = it }
+                    )
+                    3 -> BudgetScreen(
+                        viewModel = expenseViewModel,
+                        budgetViewModel = budgetViewModel,
+                        currency = currency,
+                        onLimitsPositioned = { budgetLimitsCoordinates = it }
+                    )
+                    4 -> ProfileScreen(
+                        onLogoutSuccess = onLogoutSuccess,
+                        preferenceViewModel = preferenceViewModel,
+                        authViewModel = authViewModel,
+                        onPreferencesPositioned = { profilePreferencesCoordinates = it }
+                    )
                 }
+            }
+
+            if (!isTutorialCompleted) {
+                val targetRect = when (activeStepIndex) {
+                    0 -> notificationCoordinates
+                    1 -> balanceCoordinates
+                    2 -> budgetCoordinates
+                    3 -> historyFiltersCoordinates
+                    4 -> analyticsChartCoordinates
+                    5 -> budgetLimitsCoordinates
+                    6 -> profilePreferencesCoordinates
+                    else -> null
+                }
+
+                FinexisTutorialOverlay(
+                    activeStepIndex = activeStepIndex,
+                    steps = tutorialSteps,
+                    targetRect = targetRect,
+                    onNext = {
+                        if (activeStepIndex < tutorialSteps.lastIndex) {
+                            activeStepIndex++
+                        } else {
+                            preferenceViewModel.completeTutorial()
+                        }
+                    },
+                    onSkip = {
+                        preferenceViewModel.completeTutorial()
+                    }
+                )
             }
         }
 
@@ -276,7 +402,7 @@ fun MainContainerScreen(
             ExpenseDialog(
                 currency = currency,
                 onDismiss = { showExpenseDialog = false },
-                onConfirm = { amount, category, date, paymentMethod, description, isIncome ->
+                onConfirm = { amount, category, date, paymentMethod, description, isIncome, onComplete ->
                     val amountInPkr = com.mazhar.finexis.ui.utils.CurrencyHelper.convertActiveToPkr(amount, currency)
                     expenseViewModel.addExpense(
                         amount = amountInPkr,
@@ -284,9 +410,18 @@ fun MainContainerScreen(
                         date = date,
                         paymentMethod = paymentMethod,
                         description = description,
-                        isIncome = isIncome
+                        isIncome = isIncome,
+                        onComplete = { success ->
+                            onComplete(success)
+                            if (success) {
+                                val typeStr = if (isIncome) "Income" else "Expense"
+                                preferenceViewModel.showToast("$typeStr added successfully!", false)
+                            } else {
+                                preferenceViewModel.showToast("Failed to add transaction", true)
+                            }
+                            showExpenseDialog = false
+                        }
                     )
-                    showExpenseDialog = false
                 }
             )
         }

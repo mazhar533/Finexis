@@ -29,6 +29,9 @@ import com.mazhar.finexis.ui.components.FadeInSlideUp
 import com.mazhar.finexis.ui.components.StaggeredItem
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 
 data class CategoryBudget(
     val categoryName: String,
@@ -42,7 +45,8 @@ fun BudgetScreen(
     modifier: Modifier = Modifier,
     viewModel: ExpenseViewModel = viewModel(),
     budgetViewModel: BudgetViewModel = viewModel(),
-    currency: String = "PKR"
+    currency: String = "PKR",
+    onLimitsPositioned: (Rect) -> Unit = {}
 ) {
     val expenses by viewModel.expenses.collectAsState()
     val budgetState by budgetViewModel.budget.collectAsState()
@@ -67,7 +71,8 @@ fun BudgetScreen(
         categories = categoryBudgets,
         currency = currency,
         modifier = modifier,
-        onEditBudget = { showEditDialog = true }
+        onEditBudget = { showEditDialog = true },
+        onLimitsPositioned = onLimitsPositioned
     )
 
     if (showEditDialog) {
@@ -96,7 +101,8 @@ fun BudgetScreenContent(
     categories: List<CategoryBudget>,
     currency: String,
     modifier: Modifier = Modifier,
-    onEditBudget: () -> Unit = {}
+    onEditBudget: () -> Unit = {},
+    onLimitsPositioned: (Rect) -> Unit = {}
 ) {
     Column(
         modifier = modifier
@@ -150,6 +156,11 @@ fun BudgetScreenContent(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .onGloballyPositioned { layoutCoordinates ->
+                        val position = layoutCoordinates.positionInRoot()
+                        val size = layoutCoordinates.size
+                        onLimitsPositioned(Rect(position.x, position.y, position.x + size.width, position.y + size.height))
+                    }
                     .padding(bottom = 28.dp),
                 shape = RoundedCornerShape(24.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.Transparent)

@@ -24,9 +24,10 @@ Designed with rich aesthetics, smooth animations, dynamic calculations, and nati
 
 ### 4. Advanced Budgeting & Auto-Partitioning
 * **Monthly & Category Limits**: Set overall monthly limits and individual budgets for categories: *Food*, *Transport*, *Shopping*, and *Other*.
-* **Smart Auto-Partitioning Algorithm**:
-  - If you configure a monthly budget limit but leave all category budgets as zero (`0.0`), the system automatically divides the monthly budget equally among the 4 categories.
-  - If you define specific category limits, the remaining unallocated budget is automatically distributed equally among any categories that were left unset (`0.0`).
+* **Smart Auto-Partitioning & Redistribution**:
+  - **Equal Partitioning**: If you configure a monthly budget limit but leave all category budgets as zero (`0.0`), the system automatically divides the monthly budget equally among the 4 categories.
+  - **Manual Redistribution**: If you manually edit/set a subset of categories (e.g. Food to 5000), any remaining unallocated budget (e.g. 5000 out of a 10000 limit) is dynamically distributed equally among the remaining unedited categories.
+  - **Proportional Scaling**: If you edit only the overall Monthly Limit, all categories automatically scale proportionally to align with the new budget ceiling.
 
 ### 5. Multi-Currency with Live Exchange Rates
 * **Dynamic Currency Conversion**: Real-time USD rates connection with FawazAhmed's open-access CDN currency API.

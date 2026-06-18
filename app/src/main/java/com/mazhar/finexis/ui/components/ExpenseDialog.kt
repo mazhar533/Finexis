@@ -41,7 +41,7 @@ import java.util.*
 fun ExpenseDialog(
     currency: String,
     onDismiss: () -> Unit,
-    onConfirm: (amount: Double, category: String, date: Long, paymentMethod: String, description: String, isIncome: Boolean) -> Unit,
+    onConfirm: (amount: Double, category: String, date: Long, paymentMethod: String, description: String, isIncome: Boolean, onComplete: (Boolean) -> Unit) -> Unit,
     expenseToEdit: Expense? = null
 ) {
     val context = LocalContext.current
@@ -49,6 +49,7 @@ fun ExpenseDialog(
 
     // Form States
     var isIncome by remember { mutableStateOf(expenseToEdit?.isIncome ?: false) }
+    var isLoading by remember { mutableStateOf(false) }
     val initialAmount = remember(expenseToEdit, currency) {
         if (expenseToEdit != null) {
             val converted = com.mazhar.finexis.ui.utils.CurrencyHelper.convertPkrToActive(expenseToEdit.amount, currency)
@@ -78,7 +79,7 @@ fun ExpenseDialog(
     var description by remember { mutableStateOf(expenseToEdit?.description ?: "") }
 
     val initialDate = expenseToEdit?.date ?: System.currentTimeMillis()
-    var selectedDate by remember { mutableStateOf(initialDate) }
+    var selectedDate by remember { mutableLongStateOf(initialDate) }
 
     val sdf = remember { SimpleDateFormat("MMM dd, yyyy", Locale.US) }
     val isToday = remember(selectedDate) {
@@ -307,7 +308,7 @@ fun ExpenseDialog(
                     categoryOptions.forEach { opt ->
                         val catName = opt.first
                         val iconRes = opt.second
-                        val isSelected = category.lowercase() == catName.lowercase()
+                        val isSelected = category.equals(catName, ignoreCase = true)
                         val activeBorderColor = if (isIncome) FinexisPrimary else Color(0xFFE74C3C)
                         val activeTextColor = if (isIncome) FinexisPrimary else Color(0xFFE74C3C)
 
@@ -491,11 +492,18 @@ fun ExpenseDialog(
             Button(
                 onClick = {
                     val amountDouble = amount.toDoubleOrNull() ?: 0.0
-                    if (amountDouble > 0) {
-                        onConfirm(amountDouble, category, selectedDate, paymentMethod, description, isIncome)
+                    if (amountDouble > 0 && !isLoading) {
+                        isLoading = true
+                        onConfirm(amountDouble, category, selectedDate, paymentMethod, description, isIncome) { _ ->
+                            isLoading = false
+                        }
                     }
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = FinexisPrimary),
+                enabled = !isLoading,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = FinexisPrimary,
+                    disabledContainerColor = FinexisPrimary.copy(alpha = 0.5f)
+                ),
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -506,19 +514,34 @@ fun ExpenseDialog(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Check,
-                        contentDescription = "Confirm",
-                        tint = Color.White,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Save Transaction",
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp
-                    )
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            color = Color.White,
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Saving...",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp
+                        )
+                    } else {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = "Confirm",
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Save Transaction",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp
+                        )
+                    }
                 }
             }
         }
@@ -539,7 +562,7 @@ fun TransactionBottomSheetLightPreview() {
             ExpenseDialog(
                 currency = "PKR",
                 onDismiss = {},
-                onConfirm = { _, _, _, _, _, _ -> }
+                onConfirm = { _, _, _, _, _, _, _ -> }
             )
         }
     }

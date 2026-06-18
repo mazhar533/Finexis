@@ -8,7 +8,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Check
@@ -30,8 +29,20 @@ import com.mazhar.finexis.viewmodel.AuthViewModel
 import com.mazhar.finexis.viewmodel.PreferenceViewModel
 import com.mazhar.finexis.viewmodel.ExpenseViewModel
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import com.mazhar.finexis.ui.components.FadeInSlideUp
 import com.mazhar.finexis.ui.components.AccountInfoBottomSheet
+import android.content.Intent
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.HelpOutline
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.MailOutline
+import com.mazhar.finexis.ui.components.FaqBottomSheet
+import com.mazhar.finexis.ui.components.PrivacyPolicyBottomSheet
+import androidx.compose.ui.text.style.TextAlign
+import androidx.core.net.toUri
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,7 +51,8 @@ fun ProfileScreen(
     modifier: Modifier = Modifier,
     authViewModel: AuthViewModel = viewModel(),
     preferenceViewModel: PreferenceViewModel = viewModel(),
-    expenseViewModel: ExpenseViewModel = viewModel()
+    expenseViewModel: ExpenseViewModel = viewModel(),
+    onPreferencesPositioned: (Rect) -> Unit = {}
 ) {
     val currentUserEmail by authViewModel.currentUser.collectAsState()
     val displayNameState by authViewModel.displayName.collectAsState()
@@ -56,6 +68,8 @@ fun ProfileScreen(
 
     var showAccountInfo by remember { mutableStateOf(false) }
     var showCurrencyDialog by remember { mutableStateOf(false) }
+    var showFaq by remember { mutableStateOf(false) }
+    var showPrivacyPolicy by remember { mutableStateOf(false) }
 
     // Check verification status periodically when ProfileScreen starts
     LaunchedEffect(Unit) {
@@ -109,7 +123,21 @@ fun ProfileScreen(
                     }
                 )
             },
-            modifier = Modifier.fillMaxSize()
+            onFaqClick = { showFaq = true },
+            onPrivacyPolicyClick = { showPrivacyPolicy = true },
+            onContactSupportClick = {
+                val intent = Intent(Intent.ACTION_SENDTO).apply {
+                    data = "mailto:support@finexis.com".toUri()
+                    putExtra(Intent.EXTRA_SUBJECT, "Finexis Support Request")
+                }
+                try {
+                    context.startActivity(intent)
+                } catch (_: Exception) {
+                    preferenceViewModel.showToast("No email client installed.", true)
+                }
+            },
+            modifier = Modifier.fillMaxSize(),
+            onPreferencesPositioned = onPreferencesPositioned
         )
     }
 
@@ -123,6 +151,20 @@ fun ProfileScreen(
             onShowToast = { msg, isErr ->
                 preferenceViewModel.showToast(msg, isErr)
             }
+        )
+    }
+
+    if (showFaq) {
+        FaqBottomSheet(
+            isDark = isDarkMode,
+            onDismiss = { showFaq = false }
+        )
+    }
+
+    if (showPrivacyPolicy) {
+        PrivacyPolicyBottomSheet(
+            isDark = isDarkMode,
+            onDismiss = { showPrivacyPolicy = false }
         )
     }
 
@@ -204,7 +246,11 @@ fun ProfileScreenContent(
     onCurrencyToggle: () -> Unit,
     onLogout: () -> Unit,
     onExportPdf: () -> Unit = {},
-    @SuppressLint("ModifierParameter") modifier: Modifier = Modifier
+    onFaqClick: () -> Unit = {},
+    onPrivacyPolicyClick: () -> Unit = {},
+    onContactSupportClick: () -> Unit = {},
+    @SuppressLint("ModifierParameter") modifier: Modifier = Modifier,
+    onPreferencesPositioned: (Rect) -> Unit = {}
 ) {
     Column(
         modifier = modifier
@@ -316,6 +362,11 @@ fun ProfileScreenContent(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .onGloballyPositioned { layoutCoordinates ->
+                        val position = layoutCoordinates.positionInRoot()
+                        val size = layoutCoordinates.size
+                        onPreferencesPositioned(Rect(position.x, position.y, position.x + size.width, position.y + size.height))
+                    }
                     .padding(bottom = 24.dp),
                 shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -440,8 +491,87 @@ fun ProfileScreenContent(
             }
         }
 
+        // Section: Support & Info
+        FadeInSlideUp(delayMillis = 440) {
+            Text(
+                text = "Support & Information",
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground,
+                modifier = Modifier.padding(bottom = 12.dp, start = 4.dp)
+            )
+        }
+
+        FadeInSlideUp(delayMillis = 500) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 32.dp),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Column {
+                    // FAQ Row
+                    ProfileSettingRow(
+                        iconVector = Icons.AutoMirrored.Filled.HelpOutline,
+                        title = "FAQ & Help",
+                        subtitle = "Frequently asked questions",
+                        action = {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                contentDescription = "Open FAQ",
+                                tint = MaterialTheme.colorScheme.secondary
+                            )
+                        },
+                        modifier = Modifier.clickable { onFaqClick() }
+                    )
+
+                    HorizontalDivider(
+                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+
+                    // Privacy Policy Row
+                    ProfileSettingRow(
+                        iconVector = Icons.Default.Description,
+                        title = "Privacy Policy",
+                        subtitle = "Data handling guidelines",
+                        action = {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                contentDescription = "Open Privacy Policy",
+                                tint = MaterialTheme.colorScheme.secondary
+                            )
+                        },
+                        modifier = Modifier.clickable { onPrivacyPolicyClick() }
+                    )
+
+                    HorizontalDivider(
+                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+
+                    // Contact Support Row
+                    ProfileSettingRow(
+                        iconVector = Icons.Default.MailOutline,
+                        title = "Contact Support",
+                        subtitle = "Get in touch with us",
+                        action = {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                contentDescription = "Contact Support",
+                                tint = MaterialTheme.colorScheme.secondary
+                            )
+                        },
+                        modifier = Modifier.clickable { onContactSupportClick() }
+                    )
+                }
+            }
+        }
+
         // Log Out Button Card
-        FadeInSlideUp(delayMillis = 460) {
+        FadeInSlideUp(delayMillis = 560) {
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -472,16 +602,27 @@ fun ProfileScreenContent(
                 }
             }
         }
+
+        // App Version Info
+        Spacer(modifier = Modifier.height(32.dp))
+        Text(
+            text = "Version 1.0.0 (Build 1)",
+            fontSize = 13.sp,
+            color = MaterialTheme.colorScheme.secondary,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth()
+        )
     }
 }
 
 @Composable
 fun ProfileSettingRow(
-    iconResId: Int,
     title: String,
     subtitle: String,
     action: @Composable () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    iconResId: Int? = null,
+    iconVector: androidx.compose.ui.graphics.vector.ImageVector? = null
 ) {
     Row(
         modifier = modifier
@@ -501,12 +642,21 @@ fun ProfileSettingRow(
                     .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    painter = painterResource(id = iconResId),
-                    contentDescription = title,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(20.dp)
-                )
+                if (iconVector != null) {
+                    Icon(
+                        imageVector = iconVector,
+                        contentDescription = title,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                } else if (iconResId != null) {
+                    Icon(
+                        painter = painterResource(id = iconResId),
+                        contentDescription = title,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             }
             Spacer(modifier = Modifier.width(16.dp))
             Column {

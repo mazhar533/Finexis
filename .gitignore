@@ -13,3 +13,12 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Firebase configurations
+google-services.json
+
+# Signing / Keystore keys
+*.jks
+*.keystore
+*.pk8
+*.pem

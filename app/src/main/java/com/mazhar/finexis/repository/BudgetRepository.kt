@@ -19,7 +19,7 @@ class BudgetRepository {
             auth = FirebaseAuth.getInstance()
             firestore = FirebaseFirestore.getInstance()
             setupFirestoreListener()
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             isMockMode = true
         }
     }

@@ -5,7 +5,6 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.mazhar.finexis.MainActivity
@@ -15,6 +14,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.*
+import androidx.core.content.edit
 
 object NotificationHelper {
     const val CHANNEL_BUDGET_ALERTS = "budget_alerts"
@@ -29,30 +29,28 @@ object NotificationHelper {
     private const val KEY_NOTIFICATIONS_LIST = "notifications_list"
 
     fun createNotificationChannels(context: Context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-            // Budget Alerts Channel
-            val budgetChannel = NotificationChannel(
-                CHANNEL_BUDGET_ALERTS,
-                "Budget Alerts",
-                NotificationManager.IMPORTANCE_HIGH
-            ).apply {
-                description = "Alerts when budget limits are approached or exceeded"
-            }
-
-            // Daily Reminders Channel
-            val reminderChannel = NotificationChannel(
-                CHANNEL_DAILY_REMINDERS,
-                "Daily Reminders",
-                NotificationManager.IMPORTANCE_DEFAULT
-            ).apply {
-                description = "Daily summary and expense reminders"
-            }
-
-            notificationManager.createNotificationChannel(budgetChannel)
-            notificationManager.createNotificationChannel(reminderChannel)
+        // Budget Alerts Channel
+        val budgetChannel = NotificationChannel(
+            CHANNEL_BUDGET_ALERTS,
+            "Budget Alerts",
+            NotificationManager.IMPORTANCE_HIGH
+        ).apply {
+            description = "Alerts when budget limits are approached or exceeded"
         }
+
+        // Daily Reminders Channel
+        val reminderChannel = NotificationChannel(
+            CHANNEL_DAILY_REMINDERS,
+            "Daily Reminders",
+            NotificationManager.IMPORTANCE_DEFAULT
+        ).apply {
+            description = "Daily summary and expense reminders"
+        }
+
+        notificationManager.createNotificationChannel(budgetChannel)
+        notificationManager.createNotificationChannel(reminderChannel)
     }
 
     fun showBudgetAlert(context: Context, title: String, message: String) {
@@ -80,7 +78,7 @@ object NotificationHelper {
         try {
             val notificationManager = NotificationManagerCompat.from(context)
             notificationManager.notify(System.currentTimeMillis().toInt(), builder.build())
-        } catch (e: SecurityException) {
+        } catch (_: SecurityException) {
             // Permission not granted
         }
     }
@@ -110,7 +108,7 @@ object NotificationHelper {
         try {
             val notificationManager = NotificationManagerCompat.from(context)
             notificationManager.notify(1001, builder.build())
-        } catch (e: SecurityException) {
+        } catch (_: SecurityException) {
             // Permission not granted
         }
     }
@@ -129,8 +127,8 @@ object NotificationHelper {
                 put("isRead", false)
             }
             jsonArray.put(newNotification)
-            sharedPrefs.edit().putString(KEY_NOTIFICATIONS_LIST, jsonArray.toString()).apply()
-        } catch (e: Exception) {
+            sharedPrefs.edit { putString(KEY_NOTIFICATIONS_LIST, jsonArray.toString()) }
+        } catch (_: Exception) {
             // Ignore
         }
     }
@@ -155,7 +153,7 @@ object NotificationHelper {
                     )
                 )
             }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             // Ignore
         }
         return list.sortedByDescending { it.timestamp }
@@ -171,8 +169,8 @@ object NotificationHelper {
                 val obj = jsonArray.getJSONObject(i)
                 obj.put("isRead", true)
             }
-            sharedPrefs.edit().putString(KEY_NOTIFICATIONS_LIST, jsonArray.toString()).apply()
-        } catch (e: Exception) {
+            sharedPrefs.edit { putString(KEY_NOTIFICATIONS_LIST, jsonArray.toString()) }
+        } catch (_: Exception) {
             // Ignore
         }
     }
@@ -180,7 +178,7 @@ object NotificationHelper {
     // Clear all notifications
     fun clearNotifications(context: Context) {
         val sharedPrefs = context.getSharedPreferences(PREFS_NOTIFS_NAME, Context.MODE_PRIVATE) ?: return
-        sharedPrefs.edit().putString(KEY_NOTIFICATIONS_LIST, "[]").apply()
+        sharedPrefs.edit { putString(KEY_NOTIFICATIONS_LIST, "[]") }
     }
 
     // Cache the daily spent totals

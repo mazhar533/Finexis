@@ -116,8 +116,8 @@ object PdfExportHelper {
             // Draw Top Banner
             canvas.drawRect(0f, 0f, pageWidth.toFloat(), 90f, primaryPaint)
             canvas.drawText("Finexis Transaction Report", 30f, 40f, titlePaint)
-            canvas.drawText("Generated on: " + currentDateStr, 30f, 60f, subtitlePaint)
-            canvas.drawText("Currency: " + currency, 30f, 75f, subtitlePaint)
+            canvas.drawText("Generated on: $currentDateStr", 30f, 60f, subtitlePaint)
+            canvas.drawText("Currency: $currency", 30f, 75f, subtitlePaint)
 
             // Draw Financial Summary Cards (Top = 110f, Bottom = 175f)
             val cardY = 110f
@@ -172,7 +172,7 @@ object PdfExportHelper {
                 val bottomLimit = pageHeight - 50f
                 if (currentY + tableRowHeight > bottomLimit) {
                     // Draw Footer on current page
-                    val footerText = "Page " + pageNumber
+                    val footerText = "Page $pageNumber"
                     canvas.drawText(footerText, (pageWidth / 2 - 15).toFloat(), (pageHeight - 25).toFloat(), bodyPaint)
                     canvas.drawText("Finexis App", 30f, (pageHeight - 25).toFloat(), bodyPaint)
 
@@ -209,7 +209,7 @@ object PdfExportHelper {
                 canvas.drawText(expense.category, 130f, currentY + 16f, bodyPaint)
 
                 // Description (truncated if too long to prevent overflow)
-                val rawDescription = if (expense.description.isNotEmpty()) expense.description else expense.category
+                val rawDescription = expense.description.ifEmpty { expense.category }
                 val descWidth = 150f
                 val description = truncateText(rawDescription, bodyPaint, descWidth)
                 canvas.drawText(description, 230f, currentY + 16f, bodyPaint)
@@ -228,7 +228,7 @@ object PdfExportHelper {
             }
 
             // Draw Footer on last page
-            val finalFooterText = "Page " + pageNumber
+            val finalFooterText = "Page $pageNumber"
             canvas.drawText(finalFooterText, (pageWidth / 2 - 15).toFloat(), (pageHeight - 25).toFloat(), bodyPaint)
             canvas.drawText("Finexis App", 30f, (pageHeight - 25).toFloat(), bodyPaint)
 

@@ -17,7 +17,7 @@ class PreferenceViewModel(application: Application) : AndroidViewModel(applicati
         null
     }
 
-    private val _isDarkMode = MutableStateFlow(sharedPrefs?.getBoolean("dark_mode", true) ?: true)
+    private val _isDarkMode = MutableStateFlow(sharedPrefs?.getBoolean("dark_mode", false) ?: false)
     val isDarkMode: StateFlow<Boolean> = _isDarkMode
 
     private val _currency = MutableStateFlow(sharedPrefs?.getString("currency", "PKR") ?: "PKR")
@@ -28,6 +28,9 @@ class PreferenceViewModel(application: Application) : AndroidViewModel(applicati
 
     private val _isOnboardingCompleted = MutableStateFlow(sharedPrefs?.getBoolean("onboarding_completed", false) ?: false)
     val isOnboardingCompleted: StateFlow<Boolean> = _isOnboardingCompleted
+
+    private val _isTutorialCompleted = MutableStateFlow(sharedPrefs?.getBoolean("tutorial_completed", false) ?: false)
+    val isTutorialCompleted: StateFlow<Boolean> = _isTutorialCompleted
 
     private val _globalToast = MutableStateFlow<Pair<String, Boolean>?>(null)
     val globalToast: StateFlow<Pair<String, Boolean>?> = _globalToast
@@ -41,6 +44,9 @@ class PreferenceViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     init {
+        if (sharedPrefs != null && !sharedPrefs.contains("dark_mode")) {
+            sharedPrefs.edit().putBoolean("dark_mode", false).apply()
+        }
         loadRatesFromCache()
         fetchExchangeRates()
     }
@@ -97,6 +103,12 @@ class PreferenceViewModel(application: Application) : AndroidViewModel(applicati
     fun completeOnboarding() {
         _isOnboardingCompleted.value = true
         sharedPrefs?.edit()?.putBoolean("onboarding_completed", true)?.apply()
+    }
+
+    @SuppressLint("UseKtx")
+    fun completeTutorial() {
+        _isTutorialCompleted.value = true
+        sharedPrefs?.edit()?.putBoolean("tutorial_completed", true)?.apply()
     }
 
     private fun loadRatesFromCache() {

@@ -34,6 +34,9 @@ import com.mazhar.finexis.viewmodel.AuthViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mazhar.finexis.ui.components.FadeInSlideUp
 import com.mazhar.finexis.ui.components.StaggeredItem
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import java.text.SimpleDateFormat
 import java.util.*
 import androidx.compose.material.icons.Icons
@@ -43,6 +46,7 @@ import androidx.compose.ui.platform.LocalContext
 import com.mazhar.finexis.notification.NotificationHelper
 import com.mazhar.finexis.ui.components.NotificationBottomSheet
 
+@SuppressLint("AutoboxingStateCreation")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
@@ -52,14 +56,17 @@ fun HomeScreen(
     authViewModel: AuthViewModel = viewModel(),
     currency: String = "PKR",
     onCurrencyChange: (String) -> Unit = {},
-    onNavigateToSettings: () -> Unit = {}
+    onNavigateToSettings: () -> Unit = {},
+    onNotificationPositioned: (Rect) -> Unit = {},
+    onBalancePositioned: (Rect) -> Unit = {},
+    onBudgetPositioned: (Rect) -> Unit = {}
 ) {
     val expenses by viewModel.expenses.collectAsState()
     val budgetState by budgetViewModel.budget.collectAsState()
     val displayName by authViewModel.displayName.collectAsState()
     val context = LocalContext.current
 
-    var unreadCount by remember { mutableStateOf(0) }
+    var unreadCount by remember { mutableIntStateOf(0) }
     var showNotifications by remember { mutableStateOf(false) }
     var showCurrencyDialog by remember { mutableStateOf(false) }
 
@@ -75,21 +82,26 @@ fun HomeScreen(
     val budgetSpent = expenses.filter { !it.isIncome }.sumOf { it.amount }
     val budgetTotal = budgetState.monthlyLimit
 
-    HomeScreenContent(
-        userName = userName,
-        totalBalance = totalBalance,
-        incomeAmount = incomeAmount,
-        expenseAmount = expenseAmount,
-        budgetSpent = budgetSpent,
-        budgetTotal = budgetTotal,
-        expenses = expenses.take(5),
-        currency = currency,
-        unreadCount = unreadCount,
-        onNotificationClick = { showNotifications = true },
-        onCurrencyClick = { showCurrencyDialog = true },
-        modifier = modifier,
-        onSettingsClick = onNavigateToSettings
-    )
+    Box(modifier = Modifier.fillMaxSize()) {
+        HomeScreenContent(
+            userName = userName,
+            totalBalance = totalBalance,
+            incomeAmount = incomeAmount,
+            expenseAmount = expenseAmount,
+            budgetSpent = budgetSpent,
+            budgetTotal = budgetTotal,
+            expenses = expenses.take(5),
+            currency = currency,
+            unreadCount = unreadCount,
+            onNotificationClick = { showNotifications = true },
+            onCurrencyClick = { showCurrencyDialog = true },
+            onNotificationPositioned = onNotificationPositioned,
+            onBalancePositioned = onBalancePositioned,
+            onBudgetPositioned = onBudgetPositioned,
+            modifier = modifier,
+            onSettingsClick = onNavigateToSettings
+        )
+    }
 
     if (showNotifications) {
         NotificationBottomSheet(
@@ -175,7 +187,10 @@ fun HomeScreenContent(
     unreadCount: Int = 0,
     onNotificationClick: () -> Unit = {},
     onCurrencyClick: () -> Unit = {},
-    modifier: Modifier = Modifier,
+    onNotificationPositioned: (Rect) -> Unit = {},
+    onBalancePositioned: (Rect) -> Unit = {},
+    onBudgetPositioned: (Rect) -> Unit = {},
+    @SuppressLint("ModifierParameter") modifier: Modifier = Modifier,
     onSettingsClick: () -> Unit = {}
 ) {
     val greeting = remember {
@@ -240,6 +255,11 @@ fun HomeScreenContent(
                             .clip(CircleShape)
                             .background(MaterialTheme.colorScheme.surface)
                             .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
+                            .onGloballyPositioned { layoutCoordinates ->
+                                val position = layoutCoordinates.positionInRoot()
+                                val size = layoutCoordinates.size
+                                onNotificationPositioned(Rect(position.x, position.y, position.x + size.width, position.y + size.height))
+                            }
                             .clickable { onNotificationClick() },
                         contentAlignment = Alignment.Center
                     ) {
@@ -335,6 +355,11 @@ fun HomeScreenContent(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .onGloballyPositioned { layoutCoordinates ->
+                        val position = layoutCoordinates.positionInRoot()
+                        val size = layoutCoordinates.size
+                        onBalancePositioned(Rect(position.x, position.y, position.x + size.width, position.y + size.height))
+                    }
                     .padding(bottom = 24.dp),
                 shape = RoundedCornerShape(24.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.Transparent)
@@ -481,6 +506,11 @@ fun HomeScreenContent(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .onGloballyPositioned { layoutCoordinates ->
+                        val position = layoutCoordinates.positionInRoot()
+                        val size = layoutCoordinates.size
+                        onBudgetPositioned(Rect(position.x, position.y, position.x + size.width, position.y + size.height))
+                    }
                     .padding(bottom = 28.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -502,7 +532,7 @@ fun HomeScreenContent(
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                painter = painterResource(id = R.drawable.icon_puggy),
+                                painter = painterResource(id = R.drawable.icon_coin),
                                 contentDescription = "Budget Icon",
                                 tint = Color(0xFF1976D2),
                                 modifier = Modifier.size(24.dp)

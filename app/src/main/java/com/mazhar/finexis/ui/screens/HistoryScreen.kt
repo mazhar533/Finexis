@@ -10,6 +10,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -31,6 +34,7 @@ import com.mazhar.finexis.ui.theme.*
 
 import com.mazhar.finexis.model.Expense
 import com.mazhar.finexis.viewmodel.ExpenseViewModel
+import com.mazhar.finexis.viewmodel.PreferenceViewModel
 import com.mazhar.finexis.ui.components.ExpenseDialog
 import com.mazhar.finexis.ui.components.FadeInSlideUp
 import com.mazhar.finexis.ui.components.StaggeredItem
@@ -42,7 +46,9 @@ import java.util.*
 fun HistoryScreen(
     modifier: Modifier = Modifier,
     viewModel: ExpenseViewModel = viewModel(),
-    currency: String = "PKR"
+    preferenceViewModel: PreferenceViewModel = viewModel(),
+    currency: String = "PKR",
+    onFiltersPositioned: (Rect) -> Unit = {}
 ) {
     val expenses by viewModel.expenses.collectAsState()
     var selectedFilter by remember { mutableStateOf("All") }
@@ -65,7 +71,8 @@ fun HistoryScreen(
         currency = currency,
         onDeleteTransaction = { id -> viewModel.deleteExpense(id) },
         onEditTransaction = { expense -> expenseToEdit = expense },
-        modifier = modifier
+        modifier = modifier,
+        onFiltersPositioned = onFiltersPositioned
     )
 
     if (expenseToEdit != null) {
@@ -73,7 +80,7 @@ fun HistoryScreen(
             currency = currency,
             expenseToEdit = expenseToEdit,
             onDismiss = { expenseToEdit = null },
-            onConfirm = { amount, category, date, paymentMethod, description, isIncome ->
+            onConfirm = { amount, category, date, paymentMethod, description, isIncome, onComplete ->
                 val amountInPkr = com.mazhar.finexis.ui.utils.CurrencyHelper.convertActiveToPkr(amount, currency)
                 viewModel.editExpense(
                     id = expenseToEdit!!.id,
@@ -82,9 +89,18 @@ fun HistoryScreen(
                     date = date,
                     paymentMethod = paymentMethod,
                     description = description,
-                    isIncome = isIncome
+                    isIncome = isIncome,
+                    onComplete = { success ->
+                        onComplete(success)
+                        if (success) {
+                            val typeStr = if (isIncome) "Income" else "Expense"
+                            preferenceViewModel.showToast("$typeStr updated successfully!", false)
+                        } else {
+                            preferenceViewModel.showToast("Failed to update transaction", true)
+                        }
+                        expenseToEdit = null
+                    }
                 )
-                expenseToEdit = null
             }
         )
     }
@@ -104,7 +120,8 @@ fun HistoryScreenContent(
     currency: String,
     onDeleteTransaction: (String) -> Unit,
     onEditTransaction: (Expense) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onFiltersPositioned: (Rect) -> Unit = {}
 ) {
     val filterScrollConnection = remember {
         object : NestedScrollConnection {
@@ -144,7 +161,12 @@ fun HistoryScreenContent(
                     placeholder = { Text("Search transactions...", color = MaterialTheme.colorScheme.secondary) },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 20.dp),
+                        .padding(bottom = 20.dp)
+                        .onGloballyPositioned { layoutCoordinates ->
+                            val position = layoutCoordinates.positionInRoot()
+                            val size = layoutCoordinates.size
+                            onFiltersPositioned(Rect(position.x, position.y, position.x + size.width, position.y + size.height))
+                        },
                     shape = RoundedCornerShape(16.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = MaterialTheme.colorScheme.surface,
@@ -428,7 +450,7 @@ fun HistoryTransactionRow(
                 Spacer(modifier = Modifier.width(12.dp))
                 Column {
                     Text(
-                        text = if (expense.description.isNotEmpty()) expense.description else expense.category,
+                        text = expense.description.ifEmpty { expense.category },
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 15.sp
